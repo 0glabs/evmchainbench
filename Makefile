@@ -13,7 +13,7 @@ abigen:
 	       --pkg=incrementer_contract \
 	       --out=./lib/incrementer_contract/contract.go
 
-all: contract build
+all: contract abigen build
 
 clean:
 	rm -rf contracts/build-incrementer
