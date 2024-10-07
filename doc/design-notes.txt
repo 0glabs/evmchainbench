@@ -1,0 +1,150 @@
+Notes:
+
+1. This project provides 3 kinds of workloads:
+   a) Native token transferring
+   b) Simple smart contract of "incrementing by 1"
+   c) ERC20 token transferring
+
+2. Geth provides 3 kinds of JSON RPC URL:
+   a) http/https
+   b) Websocket
+   c) IPC (unix socket)
+
+   This project doesn't need to know the difference among them.
+   We just provides the right URL. EthClient will be able to
+   handle all the differences.
+
+3. In terms of the use of workloads, we provides 2 modes:
+   1) Generate workloads and store them to disk
+   2) Generate workloads while broadcasting transactions
+ 
+
+Architecture of Data Flow:
+
+            +---------------------+           +----------------+
+            |                     |           |                |
+            |    Tx Generator     +---------->+      Disk      |
+            |                     |           |                |
+            +----------+----------+           +--------+-------+
+                       |                               |
+                       |                               |
+                       |                               V
+                       |                      +--------+-------+
+                       |                      |                |
+                       |                      |    Tx Loader   |
+                       |                      |                |
+                       |                      +--------+-------+
+                       |                               |
+                       |                               |
+                       +-------------+    +------------+
+                                     |    |
+                                     \    /
+                                       OR
+
+                                       |
+                                       |
+                                       V
+                                     +-+-+
+                                     | C |
+                                     | H |
+                                     | A |
+                                     | N |
+                                     | N |
+                                     | E |
+                                     | L |
+                                     +-+-+
+                                       |
+                                       |
+                                       V
+                            +----------+----------+
+                            |                     |
+                            |    Tx Transmitter   |
+                            |                     |
+                            +--------+-+-+--------+
+                                     | | |
+                                     | | |   Go routines per sender
+                                     | | |
+                                     V V V
+                            +--------+-+-+--------+
+                            |                     |
+                            |        Geth         |
+                            |                     |
+                            +---------------------+
+
+
+Command line design:
+
+  commands:
+    init
+    gentx
+    cleartx
+    run
+
+  options:
+    --rpc-url
+    --senders
+    --accounts
+    --tx-count
+    --tx-types 
+    --time-gap
+
+
+OO Design
+
+  1. Tx generators
+
+                           +------------------+         +------------------------+
+                           |                  |         |                        |
+                           |     Prepare      +-------->+  Generate transctions  |
+                           |                  |         |                        |
+                           +------------------+         +------------------------+
+                   
+                                    |                                |
+                                    |                                |
+                                    |                                |
+                                    V                                V
+                   
+
+
+
+                           +------------------+         +------------------------+
+                           |                  |         |                        |
+     a) native tx          |     Nothing      +-------->+  Generate transctions  |
+                           |                  |         |                        |
+                           +------------------+         +------------------------+
+                                                        |                        |
+                                                        |  sender                |
+                                                        |  receipient            |
+                                                        |  amount                |
+                                                        |                        |
+                                                        +------------------------+
+                   
+
+
+                           +------------------+         +------------------------+
+                           |                  |         |                        |
+     b) erc20 tx           | Deploy contract  +-------->+  Generate transctions  |
+                           |                  |         |                        |
+                           +------------------+         +------------------------+
+                                                        |                        |
+                                                        |  contract_address      |
+                                                        |  sender                |
+                                                        |  receipient            |
+                                                        |  amount                |
+                                                        |                        |
+                                                        +------------------------+
+                   
+
+
+                           +------------------+         +------------------------+
+                           |                  |         |                        |
+     c) incrementer tx     | Deploy contract  +-------->+  Generate transctions  |
+                           |                  |         |                        |
+                           +------------------+         +------------------------+
+                                                        |                        |
+                                                        |  contract_address      |
+                                                        |  sender                |
+                                                        |                        |
+                                                        +------------------------+
+                   
+
