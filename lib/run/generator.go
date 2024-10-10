@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"math/big"
+	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -23,32 +24,32 @@ type Generator struct {
 	GasPrice *big.Int
 }
 
-func NewGenerator(rpcUrl, faucetPrivateKey string, senderCount, txCount int) (Generator, error) {
+func NewGenerator(rpcUrl, faucetPrivateKey string, senderCount, txCount int) (*Generator, error) {
 	client, err := ethclient.Dial(rpcUrl)
 	if err != nil {
-		return Generator{}, err
+		return &Generator{}, err
 	}
 
 	gasPrice, err := client.SuggestGasPrice(context.Background())
 	if err != nil {
-		return Generator{}, err
+		return &Generator{}, err
 	}
 
 	chainID, err := client.NetworkID(context.Background())
 	if err != nil {
-		return Generator{}, err
+		return &Generator{}, err
 	}
 
 	faucetAccount, err := account.CreateFaucetAccount(client, faucetPrivateKey)
 	if err != nil {
-		return Generator{}, err
+		return &Generator{}, err
 	}
 
 	senders := make([]*account.Account, senderCount)
 	for i := 0; i < senderCount; i++ {
 		s, err := account.NewAccount(client)
 		if err != nil {
-			return Generator{}, err
+			return &Generator{}, err
 		}
 		senders[i] = s
 	}
@@ -57,14 +58,14 @@ func NewGenerator(rpcUrl, faucetPrivateKey string, senderCount, txCount int) (Ge
 	for i := 0; i < txCount; i++ {
 		r, err := account.GenerateRandomAddress()
 		if err != nil {
-			return Generator{}, err
+			return &Generator{}, err
 		}
 		recipients[i] = r
 	}
 
 	client.Close()
 
-	return Generator{
+	return &Generator{
 		FaucetAccount: faucetAccount,
 		Senders:       senders,
 		Recipients:    recipients,
@@ -84,16 +85,33 @@ func (g *Generator) GenerateSimple() (map[int]types.Transactions, error) {
 
 	value := big.NewInt(10000000000000) // 1/100,000 ETH
 
+	var mutex sync.Mutex
+	ch := make(chan error)
+
 	for index, sender := range g.Senders {
-		txs := types.Transactions{}
-		for _, recipient := range g.Recipients {
-			tx, err := generateSimpleTx(sender.PrivateKey, sender.Address, recipient, sender.GetNonce(), g.ChainID, g.GasPrice, value)
-			if err != nil {
-				return txsMap, err
+		go func(index int, sender *account.Account) {
+			txs := types.Transactions{}
+			for _, recipient := range g.Recipients {
+				tx, err := generateSimpleTx(sender.PrivateKey, sender.Address, recipient, sender.GetNonce(), g.ChainID, g.GasPrice, value)
+				if err != nil {
+					ch <- err
+					return
+				}
+				txs = append(txs, tx)
 			}
-			txs = append(txs, tx)
+
+			mutex.Lock()
+			txsMap[index] = txs
+			mutex.Unlock()
+			ch <- nil
+		}(index, sender)
+	}
+
+	for i := 0; i < len(g.Senders); i++ {
+		msg := <-ch
+		if msg != nil {
+			return txsMap, msg
 		}
-		txsMap[index] = txs
 	}
 
 	return txsMap, nil
