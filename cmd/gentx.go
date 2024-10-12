@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+	"github.com/0glabs/evmchainbench/cmd/option"
 )
 
 var gentxCmd = &cobra.Command{
@@ -17,14 +18,6 @@ var gentxCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(gentxCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// gentxCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// gentxCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	option.OptionsForGeneration(gentxCmd)
+	option.OptionsForTxStore(gentxCmd)
 }

@@ -4,6 +4,7 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"github.com/0glabs/evmchainbench/cmd/option"
 	"github.com/0glabs/evmchainbench/lib/run"
 	"github.com/spf13/cobra"
 )
@@ -24,19 +25,5 @@ var runCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(runCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// runCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// runCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-
-	runCmd.Flags().StringP("rpc-url", "r", "http://127.0.0.1:8545", "RPC url of the chain")
-	runCmd.Flags().StringP("faucet-private-key", "f", "0xfffdbb37105441e14b0ee6330d855d8504ff39e705c3afa8f859ac9865f99306", "Private key of a faucet account")
-	runCmd.Flags().IntP("sender-count", "s", 4, "The number of senders of generated transactions")
-	runCmd.Flags().IntP("tx-count", "t", 100000, "The number of tx count each sender will broadcast")
+	option.OptionsForGeneration(runCmd)
 }
