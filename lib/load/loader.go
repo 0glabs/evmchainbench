@@ -6,6 +6,7 @@ import (
 
 	"github.com/0glabs/evmchainbench/lib/run"
 	"github.com/0glabs/evmchainbench/lib/store"
+	"github.com/0glabs/evmchainbench/lib/util"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
@@ -40,8 +41,10 @@ func (l *Loader) LoadAndRun() error {
 		}
 	}
 
-	//TODO: to use the transaction receipt
-	time.Sleep(5 * time.Second)
+	err = util.WaitForReceiptsOfTxs(client, txs, 5 * time.Second)
+	if err != nil {
+		return err
+	}
 
 	txsMap, err := l.Store.LoadTxsMap()
 	if err != nil {

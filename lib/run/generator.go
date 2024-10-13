@@ -13,6 +13,7 @@ import (
 
 	"github.com/0glabs/evmchainbench/lib/account"
 	"github.com/0glabs/evmchainbench/lib/store"
+	"github.com/0glabs/evmchainbench/lib/util"
 )
 
 type Generator struct {
@@ -156,8 +157,10 @@ func (g *Generator) prepareSenders() error {
 		txs = append(txs, signedTx)
 	}
 
-	//TODO: to use the transaction receipt
-	time.Sleep(5 * time.Second)
+	err = util.WaitForReceiptsOfTxs(client, txs, 5 * time.Second)
+	if err != nil {
+		return err
+	}
 
 	if g.ShouldPersist {
 		err := g.Store.PersistPrepareTxs(txs)
