@@ -34,6 +34,35 @@ func (s *Store) PersistTxsMap(txsMap map[int]types.Transactions) error {
 	return nil
 }
 
+func (s *Store) LoadPrepareTxs() (types.Transactions, error) {
+	return loadTxs(s.prepareFilePath())
+}
+
+func (s *Store) LoadTxsMap() (map[int]types.Transactions, error) {
+	txsMap := make(map[int]types.Transactions)
+
+	pattern := fmt.Sprintf("%s/transactions-*.rlp", s.TxStoreDir)
+	matches, err := filepath.Glob(pattern)
+	if err != nil {
+		return txsMap, err
+	}
+
+	if len(matches) == 0 {
+		return txsMap, fmt.Errorf("No transaction files are found")
+	} else {
+		for index, match := range matches {
+			txs, err := loadTxs(match)
+			if err != nil {
+				return txsMap, err
+			}
+
+			txsMap[index] = txs
+		}
+	}
+
+	return txsMap, nil
+}
+
 func (s *Store) prepareFilePath() string {
 	return filepath.Join(s.TxStoreDir, "prepare.rlp")
 }
@@ -61,4 +90,21 @@ func persistTxs(path string, txs types.Transactions) error {
 	}
 
 	return nil
+}
+
+func loadTxs(path string) (types.Transactions, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var txs types.Transactions
+
+	err = rlp.Decode(file, &txs)
+	if err != nil {
+		return nil, err
+	}
+
+	return txs, nil
 }
