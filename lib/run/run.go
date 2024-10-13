@@ -11,6 +11,9 @@ func Run(rpcUrl, faucetPrivateKey string, senderCount, txCount int) {
 	}
 
 	txsMap, err := generator.GenerateSimple()
+	if err != nil {
+		log.Fatalf("Failed to generate transactions: %v", err)
+	}
 
 	transmitter, err := NewTransmitter(rpcUrl)
 	if err != nil {
