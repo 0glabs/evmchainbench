@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/0glabs/evmchainbench/lib/account"
+	"github.com/0glabs/evmchainbench/lib/store"
 )
 
 type Generator struct {
@@ -22,9 +23,12 @@ type Generator struct {
 	RpcUrl   string
 	ChainID  *big.Int
 	GasPrice *big.Int
+
+	ShouldPersist bool
+	Store         *store.Store
 }
 
-func NewGenerator(rpcUrl, faucetPrivateKey string, senderCount, txCount int) (*Generator, error) {
+func NewGenerator(rpcUrl, faucetPrivateKey string, senderCount, txCount int, shouldPersist bool, txStoreDir string) (*Generator, error) {
 	client, err := ethclient.Dial(rpcUrl)
 	if err != nil {
 		return &Generator{}, err
@@ -72,6 +76,8 @@ func NewGenerator(rpcUrl, faucetPrivateKey string, senderCount, txCount int) (*G
 		RpcUrl:        rpcUrl,
 		ChainID:       chainID,
 		GasPrice:      gasPrice,
+		ShouldPersist: shouldPersist,
+		Store:         store.NewStore(txStoreDir),
 	}, nil
 }
 
@@ -114,6 +120,13 @@ func (g *Generator) GenerateSimple() (map[int]types.Transactions, error) {
 		}
 	}
 
+	if g.ShouldPersist {
+		err := g.Store.PersistTxsMap(txsMap)
+		if err != nil {
+			return txsMap, err
+		}
+	}
+
 	return txsMap, nil
 }
 
@@ -122,9 +135,12 @@ func (g *Generator) prepareSenders() error {
 	if err != nil {
 		return err
 	}
+	defer client.Close()
 
 	value := new(big.Int)
 	value.Mul(big.NewInt(1000000000000000000), big.NewInt(100)) // 100 Eth
+
+	txs := types.Transactions{}
 
 	for _, recipient := range g.Senders {
 		signedTx, err := generateSimpleTx(g.FaucetAccount.PrivateKey, g.FaucetAccount.Address, recipient.Address.Hex(), g.FaucetAccount.GetNonce(), g.ChainID, g.GasPrice, value)
@@ -136,10 +152,20 @@ func (g *Generator) prepareSenders() error {
 		if err != nil {
 			return err
 		}
+
+		txs = append(txs, signedTx)
 	}
 
 	//TODO: to use the transaction receipt
 	time.Sleep(5 * time.Second)
+
+	if g.ShouldPersist {
+		err := g.Store.PersistPrepareTxs(txs)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
