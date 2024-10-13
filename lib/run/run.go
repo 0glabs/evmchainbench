@@ -5,7 +5,7 @@ import (
 )
 
 func Run(rpcUrl, faucetPrivateKey string, senderCount, txCount int) {
-	generator, err := NewGenerator(rpcUrl, faucetPrivateKey, senderCount, txCount)
+	generator, err := NewGenerator(rpcUrl, faucetPrivateKey, senderCount, txCount, false, "")
 	if err != nil {
 		log.Fatalf("Failed to create generator: %v", err)
 	}
