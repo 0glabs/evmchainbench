@@ -2,6 +2,7 @@ package run
 
 import (
 	"log"
+	"sync"
 )
 
 func Run(rpcUrl, faucetPrivateKey string, senderCount, txCount int) {
@@ -20,8 +21,17 @@ func Run(rpcUrl, faucetPrivateKey string, senderCount, txCount int) {
 		log.Fatalf("Failed to create transmitter: %v", err)
 	}
 
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		MeasureTPS(rpcUrl)
+		wg.Done()
+	}()
+
 	err = transmitter.Broadcast(txsMap)
 	if err != nil {
 		log.Fatalf("Failed to broadcast transactions: %v", err)
 	}
+
+	wg.Wait()
 }
