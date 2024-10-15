@@ -29,7 +29,20 @@ type txPoolStatus struct {
 	Queued  string `json:"queued"`  // Number of queued transactions
 }
 
-var terminalWith int
+var (
+	terminalWith            int
+	slidingWindowBeginIndex int
+	finalTPS                int
+)
+
+func init() {
+	width, _, err := term.GetSize(int(os.Stdout.Fd()))
+	if err != nil {
+		fmt.Printf("Error getting terminal size:", err)
+		os.Exit(1)
+	}
+	terminalWith = width
+}
 
 func MeasureTPS(rpcUrl string) {
 	client, err := ethclient.Dial(rpcUrl)
@@ -81,13 +94,17 @@ func MeasureTPS(rpcUrl string) {
 
 		r.PendingTxCount = pendingTxCount
 		records = append(records, r)
-
 		calculateAndOutput(records)
 
 		currentBlockHeight.Add(currentBlockHeight, one)
 		time.Sleep(200 * time.Millisecond)
 	}
-	fmt.Printf("\n")
+	if finalTPS == 0 {
+		fmt.Printf("\nNot enough transactions for sampling. You may want to specify more txs with option \"-t\"\n")
+	} else {
+		fmt.Printf("\nThe best one minute TPS: %d\n", finalTPS)
+		fmt.Printf("The GasUsed/GasLimit is: %d%%\n", int(100*getRatioOfGasUsedByGasLimit(records)))
+	}
 }
 
 func getPendingTxCount(rpcClient *rpc.Client) (uint64, error) {
@@ -110,18 +127,17 @@ func calculateAndOutput(records []record) {
 		return
 	}
 
-	r0 := records[0]
 	r := records[length-1]
-	output1 := fmt.Sprintf("Height: %v  Tx: %v  PendingTx: %v  BlockTime: %v  GasLimit: %v  GasUsed: %v",
-		r.Height,
+	output1 := fmt.Sprintf("Time: %v    Tx: %v    PendingTx: %v    GasLimit: %v    GasUsed: %v",
+		r.BlockTime-records[0].BlockTime,
 		r.TxCount,
 		r.PendingTxCount,
-		r.BlockTime-r0.BlockTime,
 		r.GasLimit,
 		r.GasUsed,
 	)
 
-	output3 := fmt.Sprintf("TPS: %d", calculateTPS(records))
+	oneMinTPS := calculateOneMinTPS(records)
+	output3 := fmt.Sprintf("TPS: %d", oneMinTPS)
 
 	spaceLength := terminalWith - len(output1) - len(output3) - 1
 	if spaceLength < 0 {
@@ -131,30 +147,61 @@ func calculateAndOutput(records []record) {
 	fmt.Printf("\r%s%s%s", output1, output2, output3)
 }
 
-func calculateTPS(records []record) int {
+func calculateOneMinTPS(records []record) int {
 	length := len(records)
 	if length <= 1 {
 		return 0
 	}
 
-	count := 0
-	for i := 1; i < length; i++ {
-		count += int(records[i].TxCount)
+	i := slidingWindowBeginIndex // begining of the one min sliding window
+	j := length - 1              // end of the one min window
+
+	for {
+		if i+1 >= j {
+			break
+		}
+
+		if records[j].BlockTime-records[i+1].BlockTime < 60 { // if possible, we sample data no less than 1 minute
+			break
+		}
+
+		i += 1
 	}
 
-	timeSpan := int(records[length-1].BlockTime - records[0].BlockTime)
-	if timeSpan <= 0 {
+	slidingWindowBeginIndex = i // cache the beginning index of the sliding window
+
+	count := 0
+	for k := i + 1; k <= j; k++ {
+		count += int(records[k].TxCount)
+	}
+
+	timeSpan := int(records[j].BlockTime - records[i].BlockTime)
+	if timeSpan < 50 {
 		return 0
 	}
 
-	return count / timeSpan
+	tps := count / timeSpan
+
+	if tps > finalTPS {
+		finalTPS = tps
+	}
+
+	return tps
 }
 
-func init() {
-	width, _, err := term.GetSize(int(os.Stdout.Fd()))
-	if err != nil {
-		fmt.Printf("Error getting terminal size:", err)
-		os.Exit(1)
+func getRatioOfGasUsedByGasLimit(records []record) float64 {
+	length := len(records)
+	if length <= 1 {
+		return 0.0
 	}
-	terminalWith = width
+
+	var totalGasLimit uint64
+	var totalGasUsed uint64
+
+	for i := 1; i < length; i++ {
+		totalGasLimit += records[i].GasLimit
+		totalGasUsed += records[i].GasUsed
+	}
+
+	return float64(totalGasUsed) / float64(totalGasLimit)
 }
