@@ -3,7 +3,7 @@ package gentx
 import (
 	"log"
 
-	"github.com/0glabs/evmchainbench/lib/run"
+	"github.com/0glabs/evmchainbench/lib/cmd/run"
 )
 
 func GenTx(rpcUrl, faucetPrivateKey string, senderCount, txCount int, txStoreDir string) {
