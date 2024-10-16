@@ -27,4 +27,4 @@ go.work.sum
 # generated binary files
 bin
 
-contracts/build-incrementer
+contracts/incrementer
