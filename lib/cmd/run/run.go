@@ -2,10 +2,13 @@ package run
 
 import (
 	"log"
+
+	"github.com/0glabs/evmchainbench/lib/generator"
+	limiterpkg "github.com/0glabs/evmchainbench/lib/limiter"
 )
 
 func Run(httpRpc, wsRpc, faucetPrivateKey string, senderCount, txCount int, mempool int) {
-	limiter := NewRateLimiter(mempool)
+	limiter := limiterpkg.NewRateLimiter(mempool)
 
 	ethListener := NewEthereumListener(wsRpc, limiter)
 	err := ethListener.Connect()
@@ -19,7 +22,7 @@ func Run(httpRpc, wsRpc, faucetPrivateKey string, senderCount, txCount int, memp
 		log.Fatalf("Failed to subscribe to new heads: %v", err)
 	}
 
-	generator, err := NewGenerator(httpRpc, faucetPrivateKey, senderCount, txCount, false, "", limiter)
+	generator, err := generator.NewGenerator(httpRpc, faucetPrivateKey, senderCount, txCount, false, "", limiter)
 	if err != nil {
 		log.Fatalf("Failed to create generator: %v", err)
 	}
