@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/0glabs/evmchainbench/lib/run"
+	"github.com/0glabs/evmchainbench/lib/cmd/run"
 	"github.com/0glabs/evmchainbench/lib/store"
 	"github.com/0glabs/evmchainbench/lib/util"
 	"github.com/ethereum/go-ethereum/ethclient"

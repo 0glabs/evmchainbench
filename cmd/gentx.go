@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/0glabs/evmchainbench/cmd/option"
-	"github.com/0glabs/evmchainbench/lib/gentx"
+	"github.com/0glabs/evmchainbench/lib/cmd/gentx"
 	"github.com/spf13/cobra"
 )
 

@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/0glabs/evmchainbench/cmd/option"
-	"github.com/0glabs/evmchainbench/lib/load"
+	"github.com/0glabs/evmchainbench/lib/cmd/load"
 	"github.com/spf13/cobra"
 )
 
