@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/gorilla/websocket"
+	limiterpkg "github.com/0glabs/evmchainbench/lib/limiter"
 )
 
 type BlockInfo struct {
@@ -20,14 +21,14 @@ type BlockInfo struct {
 type EthereumListener struct {
 	wsURL            string
 	conn             *websocket.Conn
-	limiter          *RateLimiter
+	limiter          *limiterpkg.RateLimiter
 	blockStat        []BlockInfo
 	quit             chan struct{}
 	bestTPS          int64
 	gasUsedAtBestTPS float64
 }
 
-func NewEthereumListener(wsURL string, limiter *RateLimiter) *EthereumListener {
+func NewEthereumListener(wsURL string, limiter *limiterpkg.RateLimiter) *EthereumListener {
 	return &EthereumListener{
 		wsURL:   wsURL,
 		limiter: limiter,

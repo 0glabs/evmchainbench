@@ -5,14 +5,16 @@ import (
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+
+	limiterpkg "github.com/0glabs/evmchainbench/lib/limiter"
 )
 
 type Transmitter struct {
 	RpcUrl  string
-	limiter *RateLimiter
+	limiter *limiterpkg.RateLimiter
 }
 
-func NewTransmitter(rpcUrl string, limiter *RateLimiter) (*Transmitter, error) {
+func NewTransmitter(rpcUrl string, limiter *limiterpkg.RateLimiter) (*Transmitter, error) {
 	return &Transmitter{
 		RpcUrl:  rpcUrl,
 		limiter: limiter,
