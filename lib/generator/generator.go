@@ -2,12 +2,10 @@ package generator
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"math/big"
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 
@@ -99,7 +97,7 @@ func (g *Generator) GenerateSimple() (map[int]types.Transactions, error) {
 		go func(index int, sender *account.Account) {
 			txs := types.Transactions{}
 			for _, recipient := range g.Recipients {
-				tx, err := generateSimpleTx(sender.PrivateKey, sender.Address, recipient, sender.GetNonce(), g.ChainID, g.GasPrice, value)
+				tx, err := GenerateSimpleTransferTx(sender.PrivateKey, recipient, sender.GetNonce(), g.ChainID, g.GasPrice, value)
 				if err != nil {
 					ch <- err
 					return
@@ -144,7 +142,7 @@ func (g *Generator) prepareSenders() error {
 	txs := types.Transactions{}
 
 	for _, recipient := range g.Senders {
-		signedTx, err := generateSimpleTx(g.FaucetAccount.PrivateKey, g.FaucetAccount.Address, recipient.Address.Hex(), g.FaucetAccount.GetNonce(), g.ChainID, g.GasPrice, value)
+		signedTx, err := GenerateSimpleTransferTx(g.FaucetAccount.PrivateKey, recipient.Address.Hex(), g.FaucetAccount.GetNonce(), g.ChainID, g.GasPrice, value)
 		if err != nil {
 			return err
 		}
@@ -172,16 +170,3 @@ func (g *Generator) prepareSenders() error {
 	return nil
 }
 
-func generateSimpleTx(privateKey *ecdsa.PrivateKey, fromAddress common.Address, recipient string, nonce uint64, chainID, gasPrice, value *big.Int) (*types.Transaction, error) {
-	gasLimit := uint64(21000) // Gas limit for ETH transfer
-
-	toAddress := common.HexToAddress(recipient)
-	tx := types.NewTransaction(nonce, toAddress, value, gasLimit, gasPrice, nil)
-
-	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey)
-	if err != nil {
-		return &types.Transaction{}, err
-	}
-
-	return signedTx, nil
-}
