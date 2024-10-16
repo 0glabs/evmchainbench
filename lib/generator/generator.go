@@ -2,13 +2,11 @@ package generator
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"fmt"
 	"math/big"
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 
@@ -114,7 +112,7 @@ func (g *Generator) GenerateSimple() (map[int]types.Transactions, error) {
 		go func(index int, sender *account.Account) {
 			txs := types.Transactions{}
 			for _, recipient := range g.Recipients {
-				tx, err := generateSimpleTx(sender.PrivateKey, recipient, sender.GetNonce(), g.ChainID, g.GasPrice, value, g.EIP1559)
+				tx, err := GenerateSimpleTransferTx(sender.PrivateKey, recipient, sender.GetNonce(), g.ChainID, g.GasPrice, value, g.EIP1559)
 				if err != nil {
 					ch <- err
 					return
@@ -159,7 +157,7 @@ func (g *Generator) prepareSenders() error {
 	txs := types.Transactions{}
 
 	for _, recipient := range g.Senders {
-		signedTx, err := generateSimpleTx(g.FaucetAccount.PrivateKey, recipient.Address.Hex(), g.FaucetAccount.GetNonce(), g.ChainID, g.GasPrice, value, g.EIP1559)
+		signedTx, err := GenerateSimpleTransferTx(g.FaucetAccount.PrivateKey, recipient.Address.Hex(), g.FaucetAccount.GetNonce(), g.ChainID, g.GasPrice, value, g.EIP1559)
 		if err != nil {
 			return err
 		}
@@ -192,35 +190,4 @@ func (g *Generator) prepareSenders() error {
 	}
 
 	return nil
-}
-
-func generateSimpleTx(privateKey *ecdsa.PrivateKey, recipient string, nonce uint64, chainID, gasPrice, value *big.Int, eip1559 bool) (*types.Transaction, error) {
-	gasLimit := uint64(21000) // Gas limit for ETH transfer
-
-	toAddress := common.HexToAddress(recipient)
-
-	var signedTx *types.Transaction
-	var err error
-	if eip1559 {
-		tx := types.NewTx(&types.DynamicFeeTx{
-			ChainID:   chainID,
-			Nonce:     nonce,
-			To:        &toAddress,
-			Value:     value,
-			GasFeeCap: gasPrice,
-			GasTipCap: gasPrice,
-			Gas:       gasLimit,
-			Data:      nil,
-		})
-		signedTx, err = types.SignTx(tx, types.NewLondonSigner(chainID), privateKey)
-	} else {
-		tx := types.NewTransaction(nonce, toAddress, value, gasLimit, gasPrice, nil)
-		signedTx, err = types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey)
-	}
-
-	if err != nil {
-		return &types.Transaction{}, err
-	}
-
-	return signedTx, nil
 }
