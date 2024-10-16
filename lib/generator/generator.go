@@ -1,4 +1,4 @@
-package run
+package generator
 
 import (
 	"context"
@@ -14,6 +14,7 @@ import (
 	"github.com/0glabs/evmchainbench/lib/account"
 	"github.com/0glabs/evmchainbench/lib/store"
 	"github.com/0glabs/evmchainbench/lib/util"
+	limiterpkg "github.com/0glabs/evmchainbench/lib/limiter"
 )
 
 type Generator struct {
@@ -25,10 +26,10 @@ type Generator struct {
 	GasPrice      *big.Int
 	ShouldPersist bool
 	Store         *store.Store
-	limiter       *RateLimiter
+	limiter       *limiterpkg.RateLimiter
 }
 
-func NewGenerator(rpcUrl, faucetPrivateKey string, senderCount, txCount int, shouldPersist bool, txStoreDir string, limiter *RateLimiter) (*Generator, error) {
+func NewGenerator(rpcUrl, faucetPrivateKey string, senderCount, txCount int, shouldPersist bool, txStoreDir string, limiter *limiterpkg.RateLimiter) (*Generator, error) {
 	client, err := ethclient.Dial(rpcUrl)
 	if err != nil {
 		return &Generator{}, err
