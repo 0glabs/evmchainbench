@@ -5,7 +5,7 @@ package cmd
 
 import (
 	"github.com/0glabs/evmchainbench/cmd/option"
-	"github.com/0glabs/evmchainbench/lib/run"
+	"github.com/0glabs/evmchainbench/lib/cmd/run"
 	"github.com/spf13/cobra"
 )
 
