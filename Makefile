@@ -4,7 +4,7 @@ build:
 	go build -o bin/${BINARY_NAME} main.go
 
 contract:
-	solc --abi --bin -o contracts/incrementer contracts/incrementer.sol
+	solc --optimize --overwrite --abi --bin -o contracts/erc20 contracts/erc20.sol
 
 metadata:
 	@./generate_contract_meta_data.sh
@@ -12,4 +12,4 @@ metadata:
 all: clean contract metadata build
 
 clean:
-	rm -rf contracts/incrementer
+	rm -rf contracts/erc20
