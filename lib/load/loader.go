@@ -41,7 +41,7 @@ func (l *Loader) LoadAndRun() error {
 		}
 	}
 
-	err = util.WaitForReceiptsOfTxs(client, txs, 5 * time.Second)
+	err = util.WaitForReceiptsOfTxs(client, txs, 5*time.Second)
 	if err != nil {
 		return err
 	}
@@ -51,7 +51,8 @@ func (l *Loader) LoadAndRun() error {
 		return err
 	}
 
-	transmitter, err := run.NewTransmitter(l.RpcUrl)
+	// TODO, add limiter
+	transmitter, err := run.NewTransmitter(l.RpcUrl, nil)
 	if err != nil {
 		return err
 	}

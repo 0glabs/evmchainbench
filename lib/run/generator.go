@@ -20,16 +20,15 @@ type Generator struct {
 	FaucetAccount *account.Account
 	Senders       []*account.Account
 	Recipients    []string
-
-	RpcUrl   string
-	ChainID  *big.Int
-	GasPrice *big.Int
-
+	RpcUrl        string
+	ChainID       *big.Int
+	GasPrice      *big.Int
 	ShouldPersist bool
 	Store         *store.Store
+	limiter       *RateLimiter
 }
 
-func NewGenerator(rpcUrl, faucetPrivateKey string, senderCount, txCount int, shouldPersist bool, txStoreDir string) (*Generator, error) {
+func NewGenerator(rpcUrl, faucetPrivateKey string, senderCount, txCount int, shouldPersist bool, txStoreDir string, limiter *RateLimiter) (*Generator, error) {
 	client, err := ethclient.Dial(rpcUrl)
 	if err != nil {
 		return &Generator{}, err
@@ -79,6 +78,7 @@ func NewGenerator(rpcUrl, faucetPrivateKey string, senderCount, txCount int, sho
 		GasPrice:      gasPrice,
 		ShouldPersist: shouldPersist,
 		Store:         store.NewStore(txStoreDir),
+		limiter:       limiter,
 	}, nil
 }
 
@@ -99,7 +99,7 @@ func (g *Generator) GenerateSimple() (map[int]types.Transactions, error) {
 		go func(index int, sender *account.Account) {
 			txs := types.Transactions{}
 			for _, recipient := range g.Recipients {
-				tx, err := generateSimpleTx(sender.PrivateKey, sender.Address, recipient, sender.GetNonce(), g.ChainID, g.GasPrice, value)
+				tx, err := generateSimpleTx(sender.PrivateKey, recipient, sender.GetNonce(), g.ChainID, g.GasPrice, value)
 				if err != nil {
 					ch <- err
 					return
@@ -144,20 +144,25 @@ func (g *Generator) prepareSenders() error {
 	txs := types.Transactions{}
 
 	for _, recipient := range g.Senders {
-		signedTx, err := generateSimpleTx(g.FaucetAccount.PrivateKey, g.FaucetAccount.Address, recipient.Address.Hex(), g.FaucetAccount.GetNonce(), g.ChainID, g.GasPrice, value)
+		signedTx, err := generateSimpleTx(g.FaucetAccount.PrivateKey, recipient.Address.Hex(), g.FaucetAccount.GetNonce(), g.ChainID, g.GasPrice, value)
 		if err != nil {
 			return err
 		}
 
-		err = client.SendTransaction(context.Background(), signedTx)
-		if err != nil {
-			return err
+		for {
+			if g.limiter == nil || g.limiter.AllowRequest() {
+				err = client.SendTransaction(context.Background(), signedTx)
+				if err != nil {
+					return err
+				}
+				break
+			}
 		}
 
 		txs = append(txs, signedTx)
 	}
 
-	err = util.WaitForReceiptsOfTxs(client, txs, 5 * time.Second)
+	err = util.WaitForReceiptsOfTxs(client, txs, 10*time.Second)
 	if err != nil {
 		return err
 	}
@@ -172,7 +177,7 @@ func (g *Generator) prepareSenders() error {
 	return nil
 }
 
-func generateSimpleTx(privateKey *ecdsa.PrivateKey, fromAddress common.Address, recipient string, nonce uint64, chainID, gasPrice, value *big.Int) (*types.Transaction, error) {
+func generateSimpleTx(privateKey *ecdsa.PrivateKey, recipient string, nonce uint64, chainID, gasPrice, value *big.Int) (*types.Transaction, error) {
 	gasLimit := uint64(21000) // Gas limit for ETH transfer
 
 	toAddress := common.HexToAddress(recipient)

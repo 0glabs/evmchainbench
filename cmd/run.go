@@ -15,11 +15,13 @@ var runCmd = &cobra.Command{
 	Short: "To run the benchmark",
 	Long:  "To run the benchmark",
 	Run: func(cmd *cobra.Command, args []string) {
-		rpcUrl, _ := cmd.Flags().GetString("rpc-url")
+		httprpc, _ := cmd.Flags().GetString("http-rpc")
+		wsrpc, _ := cmd.Flags().GetString("ws-rpc")
 		faucetPrivateKey, _ := cmd.Flags().GetString("faucet-private-key")
 		senderCount, _ := cmd.Flags().GetInt("sender-count")
 		txCount, _ := cmd.Flags().GetInt("tx-count")
-		run.Run(rpcUrl, faucetPrivateKey, senderCount, txCount)
+		mempool, _ := cmd.Flags().GetInt("mempool")
+		run.Run(httprpc, wsrpc, faucetPrivateKey, senderCount, txCount, mempool)
 	},
 }
 

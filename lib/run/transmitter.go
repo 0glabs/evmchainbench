@@ -8,12 +8,14 @@ import (
 )
 
 type Transmitter struct {
-	RpcUrl string
+	RpcUrl  string
+	limiter *RateLimiter
 }
 
-func NewTransmitter(rpcUrl string) (*Transmitter, error) {
+func NewTransmitter(rpcUrl string, limiter *RateLimiter) (*Transmitter, error) {
 	return &Transmitter{
-		RpcUrl: rpcUrl,
+		RpcUrl:  rpcUrl,
+		limiter: limiter,
 	}, nil
 }
 
@@ -29,17 +31,19 @@ func (t *Transmitter) Broadcast(txsMap map[int]types.Transactions) error {
 			}
 
 			for _, tx := range txs {
-				err := broadcast(client, tx)
-				if err != nil {
-					ch <- err
-					return
+				for {
+					if t.limiter == nil || t.limiter.AllowRequest() {
+						err := broadcast(client, tx)
+						if err != nil {
+							ch <- err
+							return
+						}
+						break
+					}
 				}
 			}
-
 			ch <- nil
-			return
 		}(txs)
-
 	}
 
 	senderCount := len(txsMap)

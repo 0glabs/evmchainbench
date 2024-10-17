@@ -6,8 +6,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-
-
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "block-benchmark",
@@ -33,7 +31,7 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringP("rpc-url", "r", "http://127.0.0.1:8545", "RPC url of the chain")
+	rootCmd.PersistentFlags().StringP("http-rpc", "", "http://127.0.0.1:8545", "RPC HTTP Endpoint")
+	rootCmd.PersistentFlags().StringP("ws-rpc", "", "ws://127.0.0.1:8546", "RPC WS Endpoint")
+	rootCmd.PersistentFlags().IntP("mempool", "", 5000, "Mempool size")
 }
-
-
