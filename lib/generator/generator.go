@@ -83,6 +83,10 @@ func NewGenerator(rpcUrl, faucetPrivateKey string, senderCount, txCount int, sho
 func (g *Generator) GenerateSimple() (map[int]types.Transactions, error) {
 	txsMap := make(map[int]types.Transactions)
 
+	if g.ShouldPersist {
+		defer g.Store.PersistPrepareTxs()
+	}
+
 	err := g.prepareSenders()
 	if err != nil {
 		return txsMap, err
@@ -152,21 +156,21 @@ func (g *Generator) prepareSenders() error {
 			return err
 		}
 
+		if g.ShouldPersist {
+			g.Store.AddPrepareTx(signedTx)
+			if err != nil {
+				return err
+			}
+		}
+
 		txs = append(txs, signedTx)
 	}
 
-	err = util.WaitForReceiptsOfTxs(client, txs, 5 * time.Second)
+	err = util.WaitForReceiptsOfTxs(client, txs, 5*time.Second)
 	if err != nil {
 		return err
 	}
 
-	if g.ShouldPersist {
-		err := g.Store.PersistPrepareTxs(txs)
-		if err != nil {
-			return err
-		}
-	}
 
 	return nil
 }
-
