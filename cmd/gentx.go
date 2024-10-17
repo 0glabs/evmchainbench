@@ -14,13 +14,13 @@ var gentxCmd = &cobra.Command{
 	Long:  "To generate transactions and store them onto disk",
 	Run: func(cmd *cobra.Command, args []string) {
 
-		httprpc, _ := cmd.Flags().GetString("http-rpc")
+		httpRpc, _ := cmd.Flags().GetString("http-rpc")
 		faucetPrivateKey, _ := cmd.Flags().GetString("faucet-private-key")
 		senderCount, _ := cmd.Flags().GetInt("sender-count")
 		txCount, _ := cmd.Flags().GetInt("tx-count")
 		txStoreDir, _ := cmd.Flags().GetString("tx-store-dir")
 
-		gentx.GenTx(httprpc, faucetPrivateKey, senderCount, txCount, txStoreDir)
+		gentx.GenTx(httpRpc, faucetPrivateKey, senderCount, txCount, txStoreDir)
 		fmt.Println("gentx called")
 	},
 }

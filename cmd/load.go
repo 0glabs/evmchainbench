@@ -13,9 +13,9 @@ var loadCmd = &cobra.Command{
 	Short: "Load previously generated transactions and run the benchmark",
 	Long:  "Load previously generated transactions and run the benchmark",
 	Run: func(cmd *cobra.Command, args []string) {
-		httprpc, _ := cmd.Flags().GetString("http-rpc")
+		httpRpc, _ := cmd.Flags().GetString("http-rpc")
 		txStoreDir, _ := cmd.Flags().GetString("tx-store-dir")
-		loader := load.NewLoader(httprpc, txStoreDir)
+		loader := load.NewLoader(httpRpc, txStoreDir)
 		err := loader.LoadAndRun()
 		if err != nil {
 			log.Fatalf("Failed to load and run: %v", err)
