@@ -11,16 +11,22 @@ import (
 
 type Store struct {
 	TxStoreDir string
+	PrepareTxCache types.Transactions
 }
 
 func NewStore(txStoreDir string) *Store {
 	return &Store{
 		TxStoreDir: txStoreDir,
+		PrepareTxCache: types.Transactions{},
 	}
 }
 
-func (s *Store) PersistPrepareTxs(txs types.Transactions) error {
-	return persistTxs(s.prepareFilePath(), txs)
+func (s *Store) AddPrepareTx(tx *types.Transaction) {
+	s.PrepareTxCache = append(s.PrepareTxCache, tx)
+}
+
+func (s *Store) PersistPrepareTxs() error {
+	return persistTxs(s.prepareFilePath(), s.PrepareTxCache)
 }
 
 func (s *Store) PersistTxsMap(txsMap map[int]types.Transactions) error {
