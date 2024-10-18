@@ -20,8 +20,8 @@ jobs:
         git clone https://github.com/0glabs/0g-chain.git
         cd 0g-chain
         sudo LINK_STATICALLY=true make build-release
-        nohup ./localtestnet.sh > localtestnet.log 2>&1 &
-        sleep 10
+        ./localtestnet.sh &
+        sleep 20
         tail localtestnet.log
         cd ../../evmchainbench
         ./bin/evmchainbench run
