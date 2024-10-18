@@ -1,10 +1,16 @@
-name: 0gchaind tps test
+name: Signal Node - 0G
 
 on:
   workflow_dispatch:
 
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
 jobs:
-  test:
+  run:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
