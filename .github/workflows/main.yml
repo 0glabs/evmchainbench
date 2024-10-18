@@ -21,5 +21,6 @@ jobs:
         cd 0g-chain
         sudo LINK_STATICALLY=true make build-release
         ./localtestnet.sh &> a.log &
+        sleep 20
         cd ../../evmchainbench
         ./bin/evmchainbench run
