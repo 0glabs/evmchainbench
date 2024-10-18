@@ -21,12 +21,6 @@ jobs:
         cd 0g-chain
         sudo LINK_STATICALLY=true make build-release
         nohup ./localtestnet.sh > localtestnet.log 2>&1 &
-    - name: Waiting for rpc server
-      run: sleep 10
-    - name: Run Benchmark Test
-      run: |
-        pwd
-        ls
-        cat 0g-chain/localtestnet.log
-        cd ../evmchainbench
+        sleep 10
+        cd ../../evmchainbench
         ./bin/evmchainbench run
