@@ -2,7 +2,7 @@
 
 # The compiled contracts of each module are saved in directory "contract/{module_name}"
 # The module_name will be used as the go package name
-for dir in contracts/*/; do
+for dir in contracts/build/*/; do
     package=$(basename ${dir})
     destdir=lib/contract_meta_data/${package}
     mkdir -p ${destdir}
