@@ -20,7 +20,7 @@ jobs:
         git clone https://github.com/0glabs/0g-chain.git
         cd 0g-chain
         sudo LINK_STATICALLY=true make build-release
-        ./localtestnet.sh &> a.log &
-        sleep 30
+        ./localtestnet.sh &> chain.log &
+        while ! nc -z localhost 8546; do sleep 1; done
         cd ../../evmchainbench
         ./bin/evmchainbench run --faucet-private-key 58095A53EA065B7DC3065365B2A8F6797F26464381BB6A34F8337F010A63CB63 --sender-count 500 --tx-count 100
