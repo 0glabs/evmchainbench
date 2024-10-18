@@ -1,0 +1,29 @@
+name: 0gchaind tps test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23'
+    - name: Build Tool
+      run: |
+        make build
+    - name: Build Chain
+      run: |
+        git clone https://github.com/0glabs/0g-chain.git
+        cd 0g-chain
+        sudo LINK_STATICALLY=true make build-release
+        ./localtestnet.sh &
+    - name: Waiting for rpc server
+      run: sleep 10
+    - name: Run Benchmark Test
+      run: |
+        cd ../evmchainbench
+        ./bin/evmchainbench
