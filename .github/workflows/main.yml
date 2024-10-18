@@ -27,7 +27,7 @@ jobs:
           ./localtestnet.sh &
         
         wait-on: |
-          http://127.0.0.1:8545
+          127.0.0.1:8545
 
         wait-for: 5m
 
