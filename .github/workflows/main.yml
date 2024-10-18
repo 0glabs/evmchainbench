@@ -20,7 +20,7 @@ jobs:
         git clone https://github.com/0glabs/0g-chain.git
         cd 0g-chain
         sudo LINK_STATICALLY=true make build-release
-        ./localtestnet.sh &
+        nohup ./localtestnet.sh > localtestnet.log 2>&1 &
     - name: Waiting for rpc server
       run: sleep 10
     - name: Run Benchmark Test
