@@ -22,6 +22,5 @@ jobs:
         sudo LINK_STATICALLY=true make build-release
         ./localtestnet.sh &
         sleep 20
-        tail localtestnet.log
         cd ../../evmchainbench
         ./bin/evmchainbench run
