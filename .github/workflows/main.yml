@@ -29,6 +29,8 @@ jobs:
         wait-on: |
           http://localhost:8545
 
+        wait-for: 5m
+
         working-directory: 0g-chain
         
     - name: Run Benchmark Test
