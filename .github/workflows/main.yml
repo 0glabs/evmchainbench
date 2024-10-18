@@ -25,5 +25,8 @@ jobs:
       run: sleep 10
     - name: Run Benchmark Test
       run: |
+        pwd
+        ls
+        cat localtestnet.log
         cd ../evmchainbench
         ./bin/evmchainbench run
