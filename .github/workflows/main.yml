@@ -20,7 +20,18 @@ jobs:
         git clone https://github.com/0glabs/0g-chain.git
         cd 0g-chain
         sudo LINK_STATICALLY=true make build-release
-        ./localtestnet.sh &
-        sleep 20
-        cd ../../evmchainbench
+    - uses: JarvusInnovations/background-action@v1
+      name: Bootstrap System Under Test (SUT)
+      with:
+        run: |
+          ./localtestnet.sh &
+        
+        wait-on: |
+          http://localhost:8545
+
+        working-directory: 0g-chain
+        
+    - name: Run Benchmark Test
+      run: |
+        cd ../evmchainbench
         ./bin/evmchainbench run
