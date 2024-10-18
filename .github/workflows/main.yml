@@ -27,6 +27,6 @@ jobs:
       run: |
         pwd
         ls
-        cat localtestnet.log
+        cat 0g-chain/localtestnet.log
         cd ../evmchainbench
         ./bin/evmchainbench run
