@@ -5,6 +5,8 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 
@@ -116,4 +118,44 @@ func (g *Generator) prepareSenders() error {
 	}
 
 	return nil
+}
+
+func (g *Generator) deployContract(contractBin, contractABI string, args ...interface{}) (common.Address, error) {
+	client, err := ethclient.Dial(g.RpcUrl)
+	if err != nil {
+		return common.Address{}, err
+	}
+	defer client.Close()
+
+	tx, err := GenerateContractCreationTx(
+		g.FaucetAccount.PrivateKey,
+		g.FaucetAccount.GetNonce(),
+		g.ChainID,
+		g.GasPrice,
+		contractBin,
+		contractABI,
+		args...,
+	)
+	if err != nil {
+		return common.Address{}, err
+	}
+
+	err = client.SendTransaction(context.Background(), tx)
+	if err != nil {
+		return common.Address{}, err
+	}
+
+	ercContractAddress, err := bind.WaitDeployed(context.Background(), client, tx)
+	if err != nil {
+		return common.Address{}, err
+	}
+
+	if g.ShouldPersist {
+		g.Store.AddPrepareTx(tx)
+		if err != nil {
+			return common.Address{}, err
+		}
+	}
+
+	return ercContractAddress, nil
 }
