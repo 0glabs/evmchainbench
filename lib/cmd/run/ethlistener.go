@@ -148,7 +148,20 @@ func (el *EthereumListener) handleBlockResponse(response map[string]interface{})
 					// exit if total tx count is less than 100
 					fmt.Println("Best TPS:", el.bestTPS, "GasUsed%:", el.gasUsedAtBestTPS*100)
 					el.Close()
+					return
 				}
+
+				// to avoid waiting 50 seconds after the transmission is complete
+				if len(el.blockStat) >= 3 {
+					for i := 1; i <=3; i ++ {
+						if el.blockStat[len(el.blockStat)-i].TxCount != 0 {
+							return
+						}
+					}
+					fmt.Println("Best TPS:", el.bestTPS, "GasUsed%:", el.gasUsedAtBestTPS)
+					el.Close()
+				}
+
 			}
 		}
 	}
