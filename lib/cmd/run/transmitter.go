@@ -2,6 +2,7 @@ package run
 
 import (
 	"context"
+	"time"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -41,7 +42,10 @@ func (t *Transmitter) Broadcast(txsMap map[int]types.Transactions) error {
 							return
 						}
 						break
+					} else {
+						time.Sleep(10*time.Millisecond)
 					}
+
 				}
 			}
 			ch <- nil
