@@ -4,8 +4,11 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"strings"
 	"time"
 
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -172,4 +175,83 @@ func (g *Generator) deployContract(contractBin, contractABI string, args ...inte
 	}
 
 	return ercContractAddress, nil
+}
+
+func (g *Generator) executeContractFunction(contractAddress common.Address, contractABI, methodName string, args ...interface{}) error {
+	client, err := ethclient.Dial(g.RpcUrl)
+	if err != nil {
+		return err
+	}
+	defer client.Close()
+
+	tx, err := GenerateContractCallingTx(
+		g.FaucetAccount.PrivateKey,
+		contractAddress.Hex(),
+		g.FaucetAccount.GetNonce(),
+		g.ChainID,
+		g.GasPrice,
+		contractABI,
+		methodName,
+		args ...,
+	)
+	if err != nil {
+		return nil
+	}
+
+	err = client.SendTransaction(context.Background(), tx)
+	if err != nil {
+		return err
+	}
+
+	_, err = bind.WaitMined(context.Background(), client, tx)
+	if err != nil {
+		return err
+	}
+
+	if g.ShouldPersist {
+		g.Store.AddPrepareTx(tx)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (g *Generator) callContractView(contractAddress common.Address, contractABI, methodName string, args ...interface{}) ([]interface{}, error) {
+	client, err := ethclient.Dial(g.RpcUrl)
+	if err != nil {
+		return []interface{}{}, err
+	}
+	defer client.Close()
+
+	// Parse the contract's ABI
+	parsedABI, err := abi.JSON(strings.NewReader(contractABI))
+	if err != nil {
+		return []interface{}{}, err
+	}
+
+	data, err := parsedABI.Pack(methodName, args...)
+	if err != nil {
+		return []interface{}{}, err
+	}
+
+	// Create a call message
+	msg := ethereum.CallMsg{
+		To:   &contractAddress,
+		Data: data,
+	}
+
+	// Send the call
+	result, err := client.CallContract(context.Background(), msg, nil)
+	if err != nil {
+		return []interface{}{}, err
+	}
+
+	unpacked, err := parsedABI.Unpack(methodName, result)
+	if err != nil {
+		return []interface{}{}, err
+	}
+
+	return unpacked, nil
 }
