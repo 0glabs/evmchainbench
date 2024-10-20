@@ -11,7 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-const GasLimit = uint64(2100000) // a random big enough gasLimit
+const GasLimit = uint64(210000000) // a random big enough gasLimit
 
 func GenerateSimpleTransferTx(privateKey *ecdsa.PrivateKey, recipient string, nonce uint64, chainID, gasPrice, value *big.Int) (*types.Transaction, error) {
 	return generateGenericTx(
@@ -96,7 +96,7 @@ func generateGenericTx(privateKey *ecdsa.PrivateKey, recipient string, nonce uin
 			value,
 			GasLimit,
 			gasPrice,
-			nil,
+			data,
 		)
 	}
 
