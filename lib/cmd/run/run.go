@@ -8,10 +8,20 @@ import (
 )
 
 func Run(httpRpc, wsRpc, faucetPrivateKey string, senderCount, txCount int, mempool int) {
+	generator, err := generator.NewGenerator(httpRpc, faucetPrivateKey, senderCount, txCount, false, "")
+	if err != nil {
+		log.Fatalf("Failed to create generator: %v", err)
+	}
+
+	txsMap, err := generator.GenerateSimple()
+	if err != nil {
+		log.Fatalf("Failed to generate transactions: %v", err)
+	}
+
 	limiter := limiterpkg.NewRateLimiter(mempool)
 
 	ethListener := NewEthereumListener(wsRpc, limiter)
-	err := ethListener.Connect()
+	err = ethListener.Connect()
 	if err != nil {
 		log.Fatalf("Failed to connect to WebSocket: %v", err)
 	}
@@ -20,16 +30,6 @@ func Run(httpRpc, wsRpc, faucetPrivateKey string, senderCount, txCount int, memp
 	err = ethListener.SubscribeNewHeads()
 	if err != nil {
 		log.Fatalf("Failed to subscribe to new heads: %v", err)
-	}
-
-	generator, err := generator.NewGenerator(httpRpc, faucetPrivateKey, senderCount, txCount, false, "", limiter)
-	if err != nil {
-		log.Fatalf("Failed to create generator: %v", err)
-	}
-
-	txsMap, err := generator.GenerateSimple()
-	if err != nil {
-		log.Fatalf("Failed to generate transactions: %v", err)
 	}
 
 	transmitter, err := NewTransmitter(httpRpc, limiter)

@@ -19,9 +19,8 @@ var gentxCmd = &cobra.Command{
 		senderCount, _ := cmd.Flags().GetInt("sender-count")
 		txCount, _ := cmd.Flags().GetInt("tx-count")
 		txStoreDir, _ := cmd.Flags().GetString("tx-store-dir")
-		mempool, _ := cmd.Flags().GetInt("mempool")
 
-		gentx.GenTx(httpRpc, faucetPrivateKey, senderCount, txCount, txStoreDir, mempool)
+		gentx.GenTx(httpRpc, faucetPrivateKey, senderCount, txCount, txStoreDir)
 		fmt.Println("gentx called")
 	},
 }
