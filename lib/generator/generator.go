@@ -15,7 +15,6 @@ import (
 	"github.com/0glabs/evmchainbench/lib/contract_meta_data/erc20"
 	"github.com/0glabs/evmchainbench/lib/store"
 	"github.com/0glabs/evmchainbench/lib/util"
-	limiterpkg "github.com/0glabs/evmchainbench/lib/limiter"
 )
 
 type Generator struct {
@@ -27,10 +26,9 @@ type Generator struct {
 	GasPrice      *big.Int
 	ShouldPersist bool
 	Store         *store.Store
-	limiter       *limiterpkg.RateLimiter
 }
 
-func NewGenerator(rpcUrl, faucetPrivateKey string, senderCount, txCount int, shouldPersist bool, txStoreDir string, limiter *limiterpkg.RateLimiter) (*Generator, error) {
+func NewGenerator(rpcUrl, faucetPrivateKey string, senderCount, txCount int, shouldPersist bool, txStoreDir string) (*Generator, error) {
 	client, err := ethclient.Dial(rpcUrl)
 	if err != nil {
 		return &Generator{}, err
@@ -80,7 +78,6 @@ func NewGenerator(rpcUrl, faucetPrivateKey string, senderCount, txCount int, sho
 		GasPrice:      gasPrice,
 		ShouldPersist: shouldPersist,
 		Store:         store.NewStore(txStoreDir),
-		limiter:       limiter,
 	}, nil
 }
 
@@ -220,14 +217,9 @@ func (g *Generator) prepareSenders() error {
 			return err
 		}
 
-		for {
-			if g.limiter == nil || g.limiter.AllowRequest() {
-				err = client.SendTransaction(context.Background(), signedTx)
-				if err != nil {
-					return err
-				}
-				break
-			}
+		err = client.SendTransaction(context.Background(), signedTx)
+		if err != nil {
+			return err
 		}
 
 		if g.ShouldPersist {
