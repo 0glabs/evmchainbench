@@ -33,5 +33,6 @@ jobs:
         sed -i '/start-reth:/,/^\s*$/s/--ipcpath ${IPC_PATH}/--ipcpath ${IPC_PATH} \\\n\t--ws \\\n\t--ws.addr "0.0.0.0" \\\n\t--ws.port 8546 \\\n\t--ws.api eth,net,web3/' "$MAKEFILE_PATH"
         sed -i '/start-reth:/,/^\s*$/s/-p 8551:8551/-p 8551:8551 \\\n\t-p 8546:8546/' "$MAKEFILE_PATH"
         make start-reth &
-        while true; do status_code=$(curl -s -o /dev/null -w '%{http_code}' -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' http://localhost:8545); if [ "$status_code" -eq 200 ]; then break; else echo "Current status code: $status_code"; sleep 1; fi; done        cd ../../evmchainbench
+        sleep 10
+        cd ../../evmchainbench
         ./bin/evmchainbench run --tx-count 20000
