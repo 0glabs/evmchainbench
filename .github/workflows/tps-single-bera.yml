@@ -1,0 +1,35 @@
+name: Signal Node - Bera
+
+on:
+  workflow_dispatch:
+
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23'
+    - name: Build Tool
+      run: |
+        make build
+    - name: Build Chain
+      run: |
+        git clone https://github.com/berachain/beacon-kit.git
+        cd beacon-kit
+        make start &> beacon.log &
+        MAKEFILE_PATH="build/scripts/testing.mk"
+        sed -i '/start-reth:/,/^\s*$/s/--ipcpath ${IPC_PATH}/--ipcpath ${IPC_PATH} \\\n\t--ws \\\n\t--ws.addr "0.0.0.0" \\\n\t--ws.port 8546 \\\n\t--ws.api eth,net,web3/' "$MAKEFILE_PATH"
+        sed -i '/start-reth:/,/^\s*$/s/-p 8551:8551/-p 8551:8551 \\\n\t-p 8546:8546/' "$MAKEFILE_PATH"
+        make start-reth &> reth.log &
+        while ! nc -z localhost 8546; do sleep 1; done
+        cd ../../evmchainbench
+        ./bin/evmchainbench run --tx-count 20000
