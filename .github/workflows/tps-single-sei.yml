@@ -34,7 +34,7 @@ jobs:
         tail chain.log
         container_id=$(docker ps -q | head -n 1)
         docker cp $container_id:/root/.sei ~/.sei
-        sudo chmod -R 777 ~/.sei/*
+        sudo chmod -R 777 ~/.sei
         ls -lh ~/.sei
         echo 'cat node_admin'
         cat ~/.sei/node_admin.info
