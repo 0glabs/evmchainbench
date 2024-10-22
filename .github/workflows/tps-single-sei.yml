@@ -1,0 +1,36 @@
+name: Signal Node - Sei
+
+on:
+  workflow_dispatch:
+
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23'
+    - name: Build Tool
+      run: |
+        make build
+    - name: Build Chain
+      run: |
+        git clone -b v5.9.0-hotfix https://github.com/sei-protocol/sei-chain.git
+        cd sei-chain
+        make build
+        make build-docker-node
+        make run-local-node
+        ./build/seid tx evm send 0x20f33CE90A13a4b5E7697E3544c3083B8F8A51D4 10000000000 —from node_admin <<EOF
+        12345678
+        EOF
+        sleep 10
+        cd ../../evmchainbench
+        ./bin/evmchainbench run --tx-count 20000
