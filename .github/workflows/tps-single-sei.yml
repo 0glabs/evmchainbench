@@ -26,7 +26,7 @@ jobs:
         git clone -b v5.9.0-hotfix https://github.com/sei-protocol/sei-chain.git
         cd sei-chain
         make build
-        make build-docker-node
+        make build-docker-node &> build.log
         make run-local-node &> chain.log &
         sleep 10
         tail chain.log
