@@ -32,5 +32,6 @@ jobs:
         tail chain.log
         container_id=$(docker ps -q | head -n 1)
         docker exec $container_id sh -c 'echo "12345678" | ./build/seid tx evm send 0x20f33CE90A13a4b5E7697E3544c3083B8F8A51D4 10000000000 --from node_admin'
+        sleep 10
         cd ../../evmchainbench
         ./bin/evmchainbench run --tx-count 20000
