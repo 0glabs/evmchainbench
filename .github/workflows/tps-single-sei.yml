@@ -29,8 +29,11 @@ jobs:
         cp ./build/seid .
         make build-docker-node &> build.log
         make run-local-node &> chain.log &
-        sleep 20
+        echo 'before sleep' && date
+        sleep 60
+        echo 'after sleep' && date
         tail chain.log
+        echo 'end chain log'
         container_id=$(docker ps -q | head -n 1)
         docker exec $container_id sh -c 'eval echo ~$USER'
         docker exec $container_id ls -la /root
