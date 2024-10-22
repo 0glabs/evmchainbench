@@ -25,15 +25,15 @@ jobs:
       run: |
         git clone -b v5.9.0-hotfix https://github.com/sei-protocol/sei-chain.git
         cd sei-chain
-        make build
-        cp ./build/seid seid
         make build-docker-node &> build.log
         make run-local-node &> chain.log &
         sleep 10
         tail chain.log
-        ./seid tx evm send 0x20f33CE90A13a4b5E7697E3544c3083B8F8A51D4 10000000000 --from node_admin <<EOF
+        docker exec -it $(docker ps -q | head -n 1) /bin/bash
+        ./build/seid tx evm send 0x20f33CE90A13a4b5E7697E3544c3083B8F8A51D4 10000000000 --from node_admin <<EOF
         12345678
         EOF
+        exit
         sleep 10
         cd ../../evmchainbench
         ./bin/evmchainbench run --tx-count 20000
