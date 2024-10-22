@@ -29,10 +29,12 @@ jobs:
         cp ./build/seid .
         make build-docker-node &> build.log
         make run-local-node &> chain.log &
-        sleep 10
+        sleep 20
         tail chain.log
-        docker exec $(docker ps -q | head -n 1) sh -c 'eval echo ~$USER'
-        docker cp $(docker ps -q | head -n 1):/root/.sei .
+        container_id=$(docker ps -q | head -n 1)
+        docker exec $container_id sh -c 'eval echo ~$USER'
+        docker exec $container_id ls -la /root
+        docker cp $container_id:/root/.sei .
         ./build/seid tx evm send 0x20f33CE90A13a4b5E7697E3544c3083B8F8A51D4 10000000000 --from node_admin --home .sei <<EOF
         12345678
         EOF
