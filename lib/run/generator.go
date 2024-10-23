@@ -3,6 +3,7 @@ package run
 import (
 	"context"
 	"crypto/ecdsa"
+	"fmt"
 	"math/big"
 	"sync"
 	"time"
@@ -36,10 +37,15 @@ func NewGenerator(rpcUrl, faucetPrivateKey string, senderCount, txCount int, sho
 	}
 
 	eip1559 := false
-	_, err = client.SuggestGasTipCap(context.Background())
-	if err == nil {
+	header, err := client.HeaderByNumber(context.Background(), nil)
+	if err != nil {
+		return &Generator{}, err
+	}
+	if header.BaseFee != nil {
 		eip1559 = true
 	}
+
+	fmt.Println("EIP-1559:", eip1559)
 
 	gasPrice, err := client.SuggestGasPrice(context.Background())
 	if err != nil {
