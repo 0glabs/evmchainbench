@@ -23,7 +23,7 @@ jobs:
         make build
     - name: Build Chain
       run: |
-        git clone https://github.com/0glabs/0g-chain.git
+        git clone -b v0.4.0 https://github.com/0glabs/0g-chain.git
         cd 0g-chain
         sudo LINK_STATICALLY=true make build-release
         ./localtestnet.sh &> chain.log &
