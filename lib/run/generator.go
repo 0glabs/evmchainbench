@@ -170,6 +170,8 @@ func (g *Generator) prepareSenders() error {
 					return err
 				}
 				break
+			} else {
+				time.Sleep(10 * time.Millisecond)
 			}
 		}
 
