@@ -41,7 +41,7 @@ func (l *Loader) LoadAndRun() error {
 		}
 	}
 
-	err = util.WaitForReceiptsOfTxs(client, txs, 10*time.Second)
+	err = util.WaitForReceiptsOfTxs(client, txs, 20*time.Second)
 	if err != nil {
 		return err
 	}

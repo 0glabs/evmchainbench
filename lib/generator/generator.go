@@ -129,7 +129,7 @@ func (g *Generator) prepareSenders() error {
 		txs = append(txs, signedTx)
 	}
 
-	err = util.WaitForReceiptsOfTxs(client, txs, 10*time.Second)
+	err = util.WaitForReceiptsOfTxs(client, txs, 20*time.Second)
 	if err != nil {
 		return err
 	}
