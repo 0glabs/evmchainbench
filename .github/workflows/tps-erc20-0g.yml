@@ -1,0 +1,34 @@
+name: Signal Node - 0G - ERC20
+
+on:
+  workflow_dispatch:
+
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23'
+    - name: Build Tool
+      run: |
+        make build
+    - name: Build Chain
+      run: |
+        git clone -b v0.4.0 https://github.com/0glabs/0g-chain.git
+        cd 0g-chain
+        sudo LINK_STATICALLY=true make build-release
+        sed -i '/$BINARY config broadcast-mode sync/a sed -i '\''s/timeout_commit = "5s"/timeout_commit = "1s"/'\'' ~/.0gchain/config/config.toml' localtestnet.sh
+        tail localtestnet.sh
+        ./localtestnet.sh &> chain.log &
+        while ! nc -z localhost 8546; do sleep 1; done
+        cd ../../evmchainbench
+        ./bin/evmchainbench run --faucet-private-key 58095A53EA065B7DC3065365B2A8F6797F26464381BB6A34F8337F010A63CB63 --sender-count 2 --tx-count 20000 --mempool 2500 -p erc20
