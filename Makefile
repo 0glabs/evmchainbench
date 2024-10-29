@@ -6,7 +6,7 @@ build:
 contract-erc20:
 	docker run \
 		--rm \
-		-v $$(pwd)/contracts:/src ethereum/solc:0.8.20 \
+		-v $$(pwd)/contracts:/src ethereum/solc:0.8.19 \
 		--optimize --bin --abi --overwrite \
 		-o /src/build/erc20 \
 		/src/erc20.sol
