@@ -1,0 +1,38 @@
+name: Signal Node - Kava - Uniswap
+
+on:
+  workflow_dispatch:
+
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23'
+    - name: Install moreutils (for sponge)
+      run: sudo apt-get update && sudo apt-get install -y moreutils
+    - name: Build Tool
+      run: |
+        make build
+    - name: Build Chain
+      run: |
+        git clone -b release/v0.26.x https://github.com/Kava-Labs/kava.git
+        cd kava
+        make build
+        sed -i 's|BINARY=kava|BINARY=./out/linux/kava|' ./contrib/devnet/init-new-chain.sh
+        ./contrib/devnet/init-new-chain.sh
+        jq '.consensus_params.block.max_gas |= "100000000"' ~/.kava/config/genesis.json > /tmp/tmp.json; mv /tmp/tmp.json ~/.kava/config/genesis.json
+        jq '.consensus_params.block.max_bytes |= "50000000"' ~/.kava/config/genesis.json > /tmp/tmp.json; mv /tmp/tmp.json ~/.kava/config/genesis.json
+        ./out/linux/kava start > chain.log 2>&1 &
+        while ! nc -z localhost 8546; do sleep 1; done
+        cd ../../evmchainbench
+        ./bin/evmchainbench run --faucet-private-key A1CB4F09E2CF10C23C01DB3588E3CAA98E4CB7CE5B638409750CF493DC14AFAC --tx-count 20000 -p uniswap
