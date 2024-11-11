@@ -1,9 +1,13 @@
 package generator
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"math/big"
+	"net/http"
 	"strings"
 	"time"
 
@@ -31,20 +35,77 @@ type Generator struct {
 	EIP1559       bool
 }
 
+type JSONRPCRequest struct {
+	Jsonrpc string      `json:"jsonrpc"`
+	Method  string      `json:"method"`
+	Params  interface{} `json:"params"`
+	ID      int         `json:"id"`
+}
+
+type JSONRPCResponse struct {
+	Jsonrpc string          `json:"jsonrpc"`
+	Result  json.RawMessage `json:"result"`
+	Error   *JSONRPCError   `json:"error,omitempty"`
+	ID      int             `json:"id"`
+}
+
+type JSONRPCError struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
+func CheckEIP1559(rpcUrl string) (bool, error) {
+	reqBody := JSONRPCRequest{
+		Jsonrpc: "2.0",
+		Method:  "eth_getBlockByNumber",
+		Params:  []interface{}{"latest", false},
+		ID:      1,
+	}
+
+	reqBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		return false, fmt.Errorf("failed to marshal request: %v", err)
+	}
+
+	resp, err := http.Post(rpcUrl, "application/json", bytes.NewBuffer(reqBytes))
+	if err != nil {
+		return false, fmt.Errorf("failed to send request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return false, fmt.Errorf("failed to read response: %v", err)
+	}
+
+	var rpcResp JSONRPCResponse
+	if err := json.Unmarshal(respBody, &rpcResp); err != nil {
+		return false, fmt.Errorf("failed to unmarshal response: %v", err)
+	}
+
+	if rpcResp.Error != nil {
+		return false, fmt.Errorf("RPC error: %v", rpcResp.Error.Message)
+	}
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(rpcResp.Result, &result); err != nil {
+		return false, fmt.Errorf("failed to unmarshal result: %v", err)
+	}
+
+	baseFee, exists := result["baseFeePerGas"]
+	return exists && baseFee != nil, nil
+}
+
 func NewGenerator(rpcUrl, faucetPrivateKey string, senderCount, txCount int, shouldPersist bool, txStoreDir string) (*Generator, error) {
 	client, err := ethclient.Dial(rpcUrl)
 	if err != nil {
 		return &Generator{}, err
 	}
 
-	eip1559 := false
-	/*header, err := client.HeaderByNumber(context.Background(), nil)
+	eip1559, nil := CheckEIP1559(rpcUrl)
 	if err != nil {
 		return &Generator{}, err
 	}
-	if header.BaseFee != nil {
-		eip1559 = true
-	}*/
 
 	fmt.Println("EIP-1559:", eip1559)
 
