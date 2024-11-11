@@ -14,6 +14,10 @@ import (
 func (g *Generator) GenerateERC20() (map[int]types.Transactions, error) {
 	txsMap := make(map[int]types.Transactions)
 
+	if g.ShouldPersist {
+		defer g.Store.PersistPrepareTxs()
+	}
+
 	contractAddress, err := g.prepareContractERC20()
 	if err != nil {
 		return txsMap, err

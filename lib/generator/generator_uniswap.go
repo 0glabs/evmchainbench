@@ -15,6 +15,10 @@ import (
 func (g *Generator) GenerateUniswap() (map[int]types.Transactions, error) {
 	txsMap := make(map[int]types.Transactions)
 
+	if g.ShouldPersist {
+		defer g.Store.PersistPrepareTxs()
+	}
+
 	pairContract, err := g.prepareContractUniswap()
 	if err != nil {
 		return txsMap, err
