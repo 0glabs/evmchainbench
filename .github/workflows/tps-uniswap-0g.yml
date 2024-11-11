@@ -23,7 +23,7 @@ jobs:
         make build
     - name: Build Chain
       run: |
-        git clone -b v0.4.0 https://github.com/0glabs/0g-chain.git
+        git clone -b dev0.38 https://github.com/0glabs/0g-chain.git
         cd 0g-chain
         sudo LINK_STATICALLY=true make build-release
         sed -i '/$BINARY config broadcast-mode sync/a sed -i '\''s/timeout_commit = "5s"/timeout_commit = "1s"/'\'' ~/.0gchain/config/config.toml' localtestnet.sh
