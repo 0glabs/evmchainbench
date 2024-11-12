@@ -35,6 +35,7 @@ resp = requests.get('https://api.github.com/repos/0glabs/evmchainbench/actions/w
 
 for workflow in resp['workflows']:
     name = workflow['name'].split('-')
+    if len(name) < 2: continue
     chain = name[1].strip()
     category = 'Simple' if len(name) < 3 else name[2].strip()
     print(chain, category)
