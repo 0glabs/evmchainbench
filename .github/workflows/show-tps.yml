@@ -20,4 +20,6 @@ jobs:
       run: pip install prettytable requests
 
     - name: Run performance script
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: python show-tps.py
