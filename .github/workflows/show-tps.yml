@@ -1,9 +1,6 @@
 name: Display Performance Table
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 jobs:
