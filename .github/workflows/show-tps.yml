@@ -17,7 +17,7 @@ jobs:
         python-version: '3.x'
 
     - name: Install dependencies
-      run: pip install prettytable
+      run: pip install prettytable requests
 
     - name: Run performance script
       run: python show-tps.py
