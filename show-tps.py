@@ -26,8 +26,8 @@ def getTPS(url):
                 match = re.search(pattern, lastLine)
 
                 if match:
-                    best_tps = int(match.group(1))  # 提取第一个捕获组 (TPS)
-                    gas_used = float(match.group(2))  # 提取第二个捕获组 (GasUsed%)
+                    best_tps = int(match.group(1))
+                    gas_used = float(match.group(2))
                     
                     return best_tps, gas_used
     return None, None
@@ -55,7 +55,6 @@ from prettytable import PrettyTable
 table = PrettyTable()
 table.field_names = ["Chain", "Simple", "ERC20", "Uniswap"]
 
-# 填充表格
 for chain, contracts in res.items():
     row = [chain]
     for contract_type in ["ERC20", "Simple", "Uniswap"]:
@@ -66,10 +65,12 @@ for chain, contracts in res.items():
             row.append(f"{tps:4}, {gas_used * 100:.2f}%")
     table.add_row(row)
 
-table.align["Chain"] = "l"  # 让Chain列左对齐
-table.align["ERC20"] = "l"
-table.align["Simple"] = "l"
-table.align["Uniswap"] = "l"
+markdown_table = "| " + " | ".join(table.field_names) + " |\n"
+markdown_table += "| " + " | ".join(["---"] * len(table.field_names)) + " |\n"
 
-# 打印表格
-print(table)
+for row in table:
+    markdown_table += "| " + " | ".join(row) + " |\n"
+
+with open(os.getenv('GITHUB_STEP_SUMMARY'), 'a') as summary_file:
+    summary_file.write("### Performance Table\n")
+    summary_file.write(markdown_table + "\n")
