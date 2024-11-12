@@ -40,13 +40,15 @@ for workflow in resp['workflows']:
     category = 'Simple' if len(name) < 3 else name[2].strip()
     print(chain, category)
     runs = requests.get(f'{workflow['url']}/runs', headers=headers).json()
-    last_run = runs['workflow_runs'][0]
-    print(last_run['logs_url'])
-    best_tps, gas_used = getTPS(last_run['logs_url'])
-    print(best_tps, gas_used)
-    if chain not in res:
-        res[chain] = {}
-    res[chain][category] = (best_tps, gas_used)
+    for run in runs['workflow_runs']:
+        if run['conclusion'] == 'success':
+            print(run['logs_url'])
+            best_tps, gas_used = getTPS(run['logs_url'])
+            print(best_tps, gas_used)
+            if chain not in res:
+                res[chain] = {}
+            res[chain][category] = (best_tps, gas_used)
+            break
 
 print(res)
 
