@@ -4,7 +4,7 @@ import zipfile
 import re
 import os
 
-token = os.getenv("secrets.GITHUB_TOKEN")
+token = os.getenv("GITHUB_TOKEN")
 headers = {"Authorization": f"token {token}"}
 
 res = {}
