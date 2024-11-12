@@ -67,13 +67,8 @@ for chain, contracts in res.items():
 
 markdown_table = "| " + " | ".join(table.field_names) + " |\n"
 markdown_table += "| " + " | ".join(["---"] * len(table.field_names)) + " |\n"
-
-for row in table:
+for row in table.rows:
     markdown_table += "| " + " | ".join(map(str, row)) + " |\n"
-
-with open(os.getenv('GITHUB_STEP_SUMMARY'), 'a') as summary_file:
-    summary_file.write("### Performance Table\n")
-    summary_file.write(markdown_table + "\n")
 
 with open(os.getenv('GITHUB_STEP_SUMMARY'), 'a') as summary_file:
     summary_file.write("### Performance Table\n")
