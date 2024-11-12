@@ -11,7 +11,6 @@ res = {}
 
 def getTPS(url):
     response = requests.get(url, headers=headers)
-    print(url, response.status_code)
     if response.status_code == 200:
         zip_file = zipfile.ZipFile(io.BytesIO(response.content))
 
@@ -57,7 +56,7 @@ table.field_names = ["Chain", "Simple", "ERC20", "Uniswap"]
 
 for chain, contracts in res.items():
     row = [chain]
-    for contract_type in ["ERC20", "Simple", "Uniswap"]:
+    for contract_type in ["Simple", "ERC20", "Uniswap"]:
         tps, gas_used = contracts[contract_type]
         if tps is None or gas_used is None:
             row.append("")
