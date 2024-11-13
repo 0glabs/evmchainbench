@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"fmt"
 	"math/big"
 	"sync"
 
@@ -34,6 +35,27 @@ func (g *Generator) GenerateERC20() (map[int]types.Transactions, error) {
 	var mutex sync.Mutex
 	ch := make(chan error)
 
+	sender := g.Senders[0]
+	tx, _ := GenerateContractCallingTx(
+		sender.PrivateKey,
+		contractAddressStr,
+		0,
+		g.ChainID,
+		g.GasPrice,
+		erc20TransferGasLimit,
+		erc20.MyTokenABI,
+		"transfer",
+		common.HexToAddress(g.Recipients[0]),
+		big.NewInt(0),
+	)
+	ethCallTx := ConvertLegacyTxToCallMsg(tx, sender.Address)
+	estimateGas, err := g.estimateGas(ethCallTx)
+	if err != nil {
+		return txsMap, err
+	}
+
+	fmt.Println("Estimated gas:", estimateGas)
+
 	for index, sender := range g.Senders {
 		go func(index int, sender *account.Account) {
 			txs := types.Transactions{}
@@ -44,7 +66,7 @@ func (g *Generator) GenerateERC20() (map[int]types.Transactions, error) {
 					sender.GetNonce(),
 					g.ChainID,
 					g.GasPrice,
-					erc20TransferGasLimit,
+					estimateGas,
 					erc20.MyTokenABI,
 					"transfer",
 					common.HexToAddress(recipient),

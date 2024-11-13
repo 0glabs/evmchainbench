@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"fmt"
 	"math/big"
 	"sync"
 
@@ -33,6 +34,29 @@ func (g *Generator) GenerateUniswap() (map[int]types.Transactions, error) {
 	var mutex sync.Mutex
 	ch := make(chan error)
 
+	sender := g.Senders[0]
+	tx, _ := GenerateContractCallingTx(
+		sender.PrivateKey,
+		pairContractStr,
+		0,
+		g.ChainID,
+		g.GasPrice,
+		uniswapSwapGasLimit,
+		uniswap.UniswapV2PairABI,
+		"swap",
+		big.NewInt(0),
+		big.NewInt(1000),
+		sender.Address,
+		[]byte{},
+	)
+	ethCallTx := ConvertLegacyTxToCallMsg(tx, sender.Address)
+	estimateGas, err := g.estimateGas(ethCallTx)
+	if err != nil {
+		return txsMap, err
+	}
+
+	fmt.Println("Estimated gas:", estimateGas)
+
 	for index, sender := range g.Senders {
 		go func(index int, sender *account.Account) {
 			txs := types.Transactions{}
@@ -52,7 +76,7 @@ func (g *Generator) GenerateUniswap() (map[int]types.Transactions, error) {
 					sender.GetNonce(),
 					g.ChainID,
 					g.GasPrice,
-					uniswapSwapGasLimit,
+					estimateGas,
 					uniswap.UniswapV2PairABI,
 					"swap",
 					amount0out,

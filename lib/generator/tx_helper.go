@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"strings"
 
+	"github.com/ethereum/go-ethereum"
 	abipkg "github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -75,6 +76,17 @@ func GenerateContractCreationTx(privateKey *ecdsa.PrivateKey, nonce uint64, chai
 	}
 
 	return signedTx, nil
+}
+
+func ConvertLegacyTxToCallMsg(tx *types.Transaction, from common.Address) ethereum.CallMsg {
+	return ethereum.CallMsg{
+		From:     from,
+		To:       tx.To(),
+		Gas:      tx.Gas(),
+		GasPrice: tx.GasPrice(),
+		Value:    tx.Value(),
+		Data:     tx.Data(),
+	}
 }
 
 func GenerateContractCallingTx(privateKey *ecdsa.PrivateKey, contractAddress string, nonce uint64, chainID, gasPrice *big.Int, gasLimit uint64, contractABI, method string, args ...interface{}) (*types.Transaction, error) {

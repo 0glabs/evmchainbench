@@ -137,6 +137,16 @@ func (g *Generator) prepareSenders() error {
 	return nil
 }
 
+func (g *Generator) estimateGas(msg ethereum.CallMsg) (uint64, error) {
+	client, err := ethclient.Dial(g.RpcUrl)
+	if err != nil {
+		return 0, err
+	}
+	defer client.Close()
+
+	return client.EstimateGas(context.Background(), msg)
+}
+
 func (g *Generator) deployContract(gasLimit uint64, contractBin, contractABI string, args ...interface{}) (common.Address, error) {
 	client, err := ethclient.Dial(g.RpcUrl)
 	if err != nil {
@@ -170,9 +180,6 @@ func (g *Generator) deployContract(gasLimit uint64, contractBin, contractABI str
 
 	if g.ShouldPersist {
 		g.Store.AddPrepareTx(tx)
-		if err != nil {
-			return common.Address{}, err
-		}
 	}
 
 	return ercContractAddress, nil
