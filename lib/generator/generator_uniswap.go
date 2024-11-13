@@ -51,6 +51,7 @@ func (g *Generator) GenerateUniswap() (map[int]types.Transactions, error) {
 	)
 	ethCallTx := ConvertLegacyTxToCallMsg(tx, sender.Address)
 	estimateGas, err := g.estimateGas(ethCallTx)
+	estimateGas = (uint64)(1.1 * float64(estimateGas))
 	if err != nil {
 		return txsMap, err
 	}
