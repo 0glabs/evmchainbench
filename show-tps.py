@@ -64,7 +64,7 @@ for chain, contracts in res.items():
         if tps is None or gas_used is None:
             row.append("")
         else:
-            row.append(f"{tps:4}, {gas_used * 100:.2f}%")
+            row.append(f"{tps:4}, {gas_used:.2f}%")
     table.add_row(row)
 
 markdown_table = "| " + " | ".join(table.field_names) + " |\n"
