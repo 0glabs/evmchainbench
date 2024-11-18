@@ -25,10 +25,9 @@ func (g *Generator) GenerateERC20() (map[int]types.Transactions, error) {
 	}
 	contractAddressStr := contractAddress.Hex()
 
-	err = g.prepareSenders()
-	if err != nil {
-		return txsMap, err
-	}
+	g.prepareSenders()
+
+	g.prepareERC20(contractAddressStr)
 
 	amount := big.NewInt(1000) // a random small amount
 
@@ -36,23 +35,20 @@ func (g *Generator) GenerateERC20() (map[int]types.Transactions, error) {
 	ch := make(chan error)
 
 	sender := g.Senders[0]
-	tx, _ := GenerateContractCallingTx(
+	tx := GenerateContractCallingTx(
 		sender.PrivateKey,
 		contractAddressStr,
-		0,
+		1,
 		g.ChainID,
 		g.GasPrice,
 		erc20TransferGasLimit,
 		erc20.MyTokenABI,
 		"transfer",
 		common.HexToAddress(g.Recipients[0]),
-		big.NewInt(0),
+		amount,
 	)
 	ethCallTx := ConvertLegacyTxToCallMsg(tx, sender.Address)
-	estimateGas, err := g.estimateGas(ethCallTx)
-	if err != nil {
-		return txsMap, err
-	}
+	estimateGas := g.estimateGas(ethCallTx)
 
 	fmt.Println("Estimated gas:", estimateGas)
 
@@ -60,7 +56,7 @@ func (g *Generator) GenerateERC20() (map[int]types.Transactions, error) {
 		go func(index int, sender *account.Account) {
 			txs := types.Transactions{}
 			for _, recipient := range g.Recipients {
-				tx, err := GenerateContractCallingTx(
+				tx := GenerateContractCallingTx(
 					sender.PrivateKey,
 					contractAddressStr,
 					sender.GetNonce(),
@@ -72,10 +68,6 @@ func (g *Generator) GenerateERC20() (map[int]types.Transactions, error) {
 					common.HexToAddress(recipient),
 					amount,
 				)
-				if err != nil {
-					ch <- err
-					return
-				}
 				txs = append(txs, tx)
 			}
 

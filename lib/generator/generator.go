@@ -2,7 +2,9 @@ package generator
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"log"
 	"math/big"
 	"strings"
 	"time"
@@ -15,6 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/0glabs/evmchainbench/lib/account"
+	"github.com/0glabs/evmchainbench/lib/contract_meta_data/erc20"
 	"github.com/0glabs/evmchainbench/lib/store"
 	"github.com/0glabs/evmchainbench/lib/util"
 )
@@ -96,10 +99,86 @@ func NewGenerator(rpcUrl, faucetPrivateKey string, senderCount, txCount int, sho
 	}, nil
 }
 
-func (g *Generator) prepareSenders() error {
+func (g *Generator) approveERC20(token common.Address, spender common.Address) {
 	client, err := ethclient.Dial(g.RpcUrl)
 	if err != nil {
-		return err
+		panic(err)
+	}
+	defer client.Close()
+	txs := types.Transactions{}
+	for _, sender := range append(g.Senders, g.FaucetAccount) {
+		tx := GenerateContractCallingTx(
+			sender.PrivateKey,
+			token.Hex(),
+			sender.GetNonce(),
+			g.ChainID,
+			g.GasPrice,
+			erc20TransferGasLimit,
+			erc20.MyTokenABI,
+			"approve",
+			spender,
+			big.NewInt(10000000000000),
+		)
+
+		err = client.SendTransaction(context.Background(), tx)
+		if err != nil {
+			panic(err)
+		}
+
+		if g.ShouldPersist {
+			g.Store.AddPrepareTx(tx)
+		}
+
+		txs = append(txs, tx)
+	}
+
+	err = util.WaitForReceiptsOfTxs(client, txs, 20*time.Second)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (g *Generator) prepareERC20(contractAddressStr string) {
+	client, err := ethclient.Dial(g.RpcUrl)
+	if err != nil {
+		panic(err)
+	}
+	defer client.Close()
+	txs := types.Transactions{}
+	for _, sender := range g.Senders {
+		tx := GenerateContractCallingTx(
+			g.FaucetAccount.PrivateKey,
+			contractAddressStr,
+			g.FaucetAccount.GetNonce(),
+			g.ChainID,
+			g.GasPrice,
+			erc20TransferGasLimit,
+			erc20.MyTokenABI,
+			"transfer",
+			common.HexToAddress(sender.Address.Hex()),
+			big.NewInt(10000000),
+		)
+
+		err = client.SendTransaction(context.Background(), tx)
+		if err != nil {
+			panic(err)
+		}
+
+		if g.ShouldPersist {
+			g.Store.AddPrepareTx(tx)
+		}
+	}
+
+	err = util.WaitForReceiptsOfTxs(client, txs, 20*time.Second)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (g *Generator) prepareSenders() {
+	client, err := ethclient.Dial(g.RpcUrl)
+	if err != nil {
+		panic(err)
 	}
 	defer client.Close()
 
@@ -111,19 +190,16 @@ func (g *Generator) prepareSenders() error {
 	for _, recipient := range g.Senders {
 		signedTx, err := GenerateSimpleTransferTx(g.FaucetAccount.PrivateKey, recipient.Address.Hex(), g.FaucetAccount.GetNonce(), g.ChainID, g.GasPrice, value, g.EIP1559)
 		if err != nil {
-			return err
+			panic(err)
 		}
 
 		err = client.SendTransaction(context.Background(), signedTx)
 		if err != nil {
-			return err
+			panic(err)
 		}
 
 		if g.ShouldPersist {
 			g.Store.AddPrepareTx(signedTx)
-			if err != nil {
-				return err
-			}
 		}
 
 		txs = append(txs, signedTx)
@@ -131,20 +207,22 @@ func (g *Generator) prepareSenders() error {
 
 	err = util.WaitForReceiptsOfTxs(client, txs, 20*time.Second)
 	if err != nil {
-		return err
+		panic(err)
 	}
-
-	return nil
 }
 
-func (g *Generator) estimateGas(msg ethereum.CallMsg) (uint64, error) {
+func (g *Generator) estimateGas(msg ethereum.CallMsg) uint64 {
 	client, err := ethclient.Dial(g.RpcUrl)
 	if err != nil {
-		return 0, err
+		panic(err)
 	}
 	defer client.Close()
 
-	return client.EstimateGas(context.Background(), msg)
+	gas, err := client.EstimateGas(context.Background(), msg)
+	if err != nil {
+		panic(err)
+	}
+	return gas
 }
 
 func (g *Generator) deployContract(gasLimit uint64, contractBin, contractABI string, args ...interface{}) (common.Address, error) {
@@ -153,7 +231,6 @@ func (g *Generator) deployContract(gasLimit uint64, contractBin, contractABI str
 		return common.Address{}, err
 	}
 	defer client.Close()
-
 	tx, err := GenerateContractCreationTx(
 		g.FaucetAccount.PrivateKey,
 		g.FaucetAccount.GetNonce(),
@@ -165,17 +242,18 @@ func (g *Generator) deployContract(gasLimit uint64, contractBin, contractABI str
 		args...,
 	)
 	if err != nil {
-		return common.Address{}, err
+		panic(err)
 	}
 
 	err = client.SendTransaction(context.Background(), tx)
 	if err != nil {
-		return common.Address{}, err
+		panic(err)
 	}
 
 	ercContractAddress, err := bind.WaitDeployed(context.Background(), client, tx)
 	if err != nil {
-		return common.Address{}, err
+		fmt.Println("tx hash:", tx.Hash().Hex())
+		panic(err)
 	}
 
 	if g.ShouldPersist {
@@ -185,14 +263,14 @@ func (g *Generator) deployContract(gasLimit uint64, contractBin, contractABI str
 	return ercContractAddress, nil
 }
 
-func (g *Generator) executeContractFunction(gasLimit uint64, contractAddress common.Address, contractABI, methodName string, args ...interface{}) error {
+func (g *Generator) executeContractFunction(gasLimit uint64, contractAddress common.Address, contractABI, methodName string, args ...interface{}) {
 	client, err := ethclient.Dial(g.RpcUrl)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	defer client.Close()
 
-	tx, err := GenerateContractCallingTx(
+	tx := GenerateContractCallingTx(
 		g.FaucetAccount.PrivateKey,
 		contractAddress.Hex(),
 		g.FaucetAccount.GetNonce(),
@@ -203,46 +281,45 @@ func (g *Generator) executeContractFunction(gasLimit uint64, contractAddress com
 		methodName,
 		args...,
 	)
-	if err != nil {
-		return nil
-	}
 
 	err = client.SendTransaction(context.Background(), tx)
 	if err != nil {
-		return err
+		panic(err)
 	}
 
-	_, err = bind.WaitMined(context.Background(), client, tx)
+	receipt, err := bind.WaitMined(context.Background(), client, tx)
 	if err != nil {
-		return err
+		panic(err)
 	}
+
+	receiptJSON, err := json.MarshalIndent(receipt, "", "  ")
+	if err != nil {
+		log.Fatalf("Failed to marshal receipt to JSON: %v", err)
+	}
+
+	fmt.Println(string(receiptJSON))
 
 	if g.ShouldPersist {
 		g.Store.AddPrepareTx(tx)
-		if err != nil {
-			return err
-		}
 	}
-
-	return nil
 }
 
-func (g *Generator) callContractView(contractAddress common.Address, contractABI, methodName string, args ...interface{}) ([]interface{}, error) {
+func (g *Generator) callContractView(contractAddress common.Address, contractABI, methodName string, args ...interface{}) []interface{} {
 	client, err := ethclient.Dial(g.RpcUrl)
 	if err != nil {
-		return []interface{}{}, err
+		panic(err)
 	}
 	defer client.Close()
 
 	// Parse the contract's ABI
 	parsedABI, err := abi.JSON(strings.NewReader(contractABI))
 	if err != nil {
-		return []interface{}{}, err
+		panic(err)
 	}
 
 	data, err := parsedABI.Pack(methodName, args...)
 	if err != nil {
-		return []interface{}{}, err
+		panic(err)
 	}
 
 	// Create a call message
@@ -254,13 +331,13 @@ func (g *Generator) callContractView(contractAddress common.Address, contractABI
 	// Send the call
 	result, err := client.CallContract(context.Background(), msg, nil)
 	if err != nil {
-		return []interface{}{}, err
+		panic(err)
 	}
 
 	unpacked, err := parsedABI.Unpack(methodName, result)
 	if err != nil {
-		return []interface{}{}, err
+		panic(err)
 	}
 
-	return unpacked, nil
+	return unpacked
 }

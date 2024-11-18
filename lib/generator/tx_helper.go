@@ -55,7 +55,7 @@ func GenerateContractCreationTx(privateKey *ecdsa.PrivateKey, nonce uint64, chai
 
 		inputData, err := abi.Pack("", args...)
 		if err != nil {
-			return &types.Transaction{}, err
+			panic(err)
 		}
 
 		bytecode = append(bytecode, inputData...)
@@ -89,15 +89,15 @@ func ConvertLegacyTxToCallMsg(tx *types.Transaction, from common.Address) ethere
 	}
 }
 
-func GenerateContractCallingTx(privateKey *ecdsa.PrivateKey, contractAddress string, nonce uint64, chainID, gasPrice *big.Int, gasLimit uint64, contractABI, method string, args ...interface{}) (*types.Transaction, error) {
+func GenerateContractCallingTx(privateKey *ecdsa.PrivateKey, contractAddress string, nonce uint64, chainID, gasPrice *big.Int, gasLimit uint64, contractABI, method string, args ...interface{}) *types.Transaction {
 	abi, err := abipkg.JSON(strings.NewReader(contractABI))
 	if err != nil {
-		return &types.Transaction{}, err
+		panic(err)
 	}
 
 	data, err := abi.Pack(method, args...)
 	if err != nil {
-		return &types.Transaction{}, err
+		panic(err)
 	}
 
 	toAddress := common.HexToAddress(contractAddress)
@@ -112,8 +112,8 @@ func GenerateContractCallingTx(privateKey *ecdsa.PrivateKey, contractAddress str
 
 	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey)
 	if err != nil {
-		return &types.Transaction{}, err
+		panic(err)
 	}
 
-	return signedTx, nil
+	return signedTx
 }

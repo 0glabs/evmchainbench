@@ -15,10 +15,7 @@ func (g *Generator) GenerateSimple() (map[int]types.Transactions, error) {
 		defer g.Store.PersistPrepareTxs()
 	}
 
-	err := g.prepareSenders()
-	if err != nil {
-		return txsMap, err
-	}
+	g.prepareSenders()
 
 	value := big.NewInt(10000000000000) // 1/100,000 ETH
 
