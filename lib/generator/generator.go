@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"math/big"
 	"strings"
 	"time"
@@ -117,7 +116,7 @@ func (g *Generator) approveERC20(token common.Address, spender common.Address) {
 			erc20.MyTokenABI,
 			"approve",
 			spender,
-			big.NewInt(10000000000000),
+			big.NewInt(1000000000000000000),
 		)
 
 		err = client.SendTransaction(context.Background(), tx)
@@ -155,7 +154,7 @@ func (g *Generator) prepareERC20(contractAddressStr string) {
 			erc20TransferGasLimit,
 			erc20.MyTokenABI,
 			"transfer",
-			common.HexToAddress(sender.Address.Hex()),
+			sender.Address,
 			big.NewInt(10000000),
 		)
 
@@ -167,6 +166,8 @@ func (g *Generator) prepareERC20(contractAddressStr string) {
 		if g.ShouldPersist {
 			g.Store.AddPrepareTx(tx)
 		}
+
+		txs = append(txs, tx)
 	}
 
 	err = util.WaitForReceiptsOfTxs(client, txs, 20*time.Second)
@@ -291,13 +292,14 @@ func (g *Generator) executeContractFunction(gasLimit uint64, contractAddress com
 	if err != nil {
 		panic(err)
 	}
-
 	receiptJSON, err := json.MarshalIndent(receipt, "", "  ")
-	if err != nil {
-		log.Fatalf("Failed to marshal receipt to JSON: %v", err)
-	}
 
-	fmt.Println(string(receiptJSON))
+	if err != nil {
+		panic(err)
+	}
+	if receipt.Status != 1 {
+		panic(string(receiptJSON))
+	}
 
 	if g.ShouldPersist {
 		g.Store.AddPrepareTx(tx)

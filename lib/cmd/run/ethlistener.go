@@ -120,7 +120,6 @@ func (el *EthereumListener) handleNewHead(response map[string]interface{}) {
 func (el *EthereumListener) handleBlockResponse(response map[string]interface{}) {
 	if result, ok := response["result"].(map[string]interface{}); ok {
 		if txns, ok := result["transactions"].([]interface{}); ok {
-			fmt.Println("BlockNo:", result["number"], "Txn[0]", txns[0])
 			el.limiter.IncreaseLimit(len(txns))
 			ts, _ := strconv.ParseInt(result["timestamp"].(string)[2:], 16, 64)
 			gasUsed, _ := strconv.ParseInt(result["gasUsed"].(string)[2:], 16, 64)

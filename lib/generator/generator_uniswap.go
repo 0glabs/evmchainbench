@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
@@ -43,7 +44,8 @@ func (g *Generator) GenerateUniswap() (map[int]types.Transactions, error) {
 
 	var data []interface{}
 
-	_, router := g.prepareContractUniswap()
+	factory, router := g.prepareContractUniswap()
+	fmt.Println("Factory contract:", factory.Hex())
 	fmt.Println("Router contract:", router.Hex())
 
 	g.approveERC20(tokenA, router)
@@ -58,10 +60,18 @@ func (g *Generator) GenerateUniswap() (map[int]types.Transactions, error) {
 	data = g.callContractView(tokenB, uniswap.UniswapV2ERC20ABI, "allowance", g.FaucetAccount.Address, router)
 	fmt.Println("Token B allowance: ", data[0].(*big.Int).String())
 
+	g.executeContractFunction(uniswapCreatePairGasLimit, factory, uniswap.UniswapV2FactoryABI, "createPair", tokenA, tokenB)
+	data = g.callContractView(factory, uniswap.UniswapV2FactoryABI, "getPair", tokenA, tokenB)
+	fmt.Println("Pair address: ", data[0].(common.Address).Hex())
+
+	var tx *types.Transaction
+	var ethCallTx ethereum.CallMsg
+	var estimateGas uint64
+
 	fmt.Println("Add liquidity")
 
 	g.executeContractFunction(uniswapCreatePairGasLimit, router, uniswap.UniswapV2RouterABI, "addLiquidity",
-		tokenA, tokenB, big.NewInt(100000), big.NewInt(100000), big.NewInt(0), big.NewInt(0), g.FaucetAccount.Address,
+		tokenA, tokenB, big.NewInt(1000000000), big.NewInt(1000000000), big.NewInt(0), big.NewInt(0), g.FaucetAccount.Address,
 		big.NewInt(time.Now().Unix()+15*60))
 
 	var mutex sync.Mutex
@@ -74,7 +84,7 @@ func (g *Generator) GenerateUniswap() (map[int]types.Transactions, error) {
 	}
 	deadline := big.NewInt(time.Now().Unix() + 15*60)
 
-	tx := GenerateContractCallingTx(
+	tx = GenerateContractCallingTx(
 		sender.PrivateKey,
 		router.Hex(),
 		0,
@@ -83,31 +93,22 @@ func (g *Generator) GenerateUniswap() (map[int]types.Transactions, error) {
 		uniswapSwapGasLimit,
 		uniswap.UniswapV2RouterABI,
 		"swapExactTokensForTokens",
+		big.NewInt(1000),
 		big.NewInt(0),
-		big.NewInt(1),
 		path,
 		sender.Address,
 		deadline,
 	)
-	ethCallTx := ConvertLegacyTxToCallMsg(tx, sender.Address)
-	estimateGas := g.estimateGas(ethCallTx)
-	estimateGas = (uint64)(1.1 * float64(estimateGas))
+	ethCallTx = ConvertLegacyTxToCallMsg(tx, sender.Address)
+	estimateGas = g.estimateGas(ethCallTx)
+	estimateGas = (uint64)(1.2 * float64(estimateGas))
 
 	fmt.Println("Estimated gas:", estimateGas)
 
 	for index, sender := range g.Senders {
 		go func(index int, sender *account.Account) {
 			txs := types.Transactions{}
-			amount0out := &big.Int{}
-			amount1out := &big.Int{}
-			for ind, _ := range g.Recipients {
-				if ind%2 == 1 {
-					amount0out = big.NewInt(1000)
-					amount1out = big.NewInt(0)
-				} else {
-					amount0out = big.NewInt(0)
-					amount1out = big.NewInt(1000)
-				}
+			for range g.Recipients {
 				tx := GenerateContractCallingTx(
 					sender.PrivateKey,
 					router.Hex(),
@@ -115,12 +116,13 @@ func (g *Generator) GenerateUniswap() (map[int]types.Transactions, error) {
 					g.ChainID,
 					g.GasPrice,
 					estimateGas,
-					uniswap.UniswapV2PairABI,
-					"swap",
-					amount0out,
-					amount1out,
+					uniswap.UniswapV2RouterABI,
+					"swapExactTokensForTokens",
+					big.NewInt(1000),
+					big.NewInt(0),
+					path,
 					sender.Address,
-					[]byte{},
+					deadline,
 				)
 				txs = append(txs, tx)
 			}
@@ -182,17 +184,16 @@ func ReadContract(filePath string) (string, string) {
 
 func (g *Generator) prepareContractUniswap() (common.Address, common.Address) {
 	factoryABI, factoryBin := ReadContract("contracts/UniswapV2Factory.json")
-	factoryContract, err := g.deployContract(uniswapContractGasLimit, factoryBin[2:], factoryABI, g.FaucetAccount.Address)
+	factoryContract, err := g.deployContract(uniswapContractGasLimit, factoryBin, factoryABI, g.FaucetAccount.Address)
 	if err != nil {
 		panic(err)
 	}
-
 	fmt.Println("Uniswap Factory:", factoryContract.Hex())
 
 	routerABI, routerBin := ReadContract("contracts/UniswapV2Router02.json")
 
 	uniswap.UniswapV2RouterABI = routerABI
-	routerContract, err := g.deployContract(uniswapContractGasLimit, routerBin[2:], uniswap.UniswapV2RouterABI, factoryContract, common.Address{})
+	routerContract, err := g.deployContract(uniswapContractGasLimit, routerBin, uniswap.UniswapV2RouterABI, factoryContract, factoryContract)
 	if err != nil {
 		panic(err)
 	}
