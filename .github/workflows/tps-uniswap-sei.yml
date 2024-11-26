@@ -38,4 +38,4 @@ jobs:
         docker exec $container_id sh -c 'echo "12345678" | ./build/seid tx bank send node_admin sei1667q4rnlspl4luk4s6mupl99w4sgglsh57am2l 1000000000000usei -y --fees 2000usei'
         sleep 5
         cd ../../evmchainbench
-        ./bin/evmchainbench run --tx-count 20000 --mempool 1000 -s 2 -p uniswap
+        ./bin/evmchainbench run --tx-count 10000 --mempool 1000 -s 2 -p uniswap
