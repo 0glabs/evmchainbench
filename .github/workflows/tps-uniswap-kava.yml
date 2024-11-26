@@ -35,4 +35,4 @@ jobs:
         ./out/linux/kava start > chain.log 2>&1 &
         while ! nc -z localhost 8546; do sleep 1; done
         cd ../../evmchainbench
-        ./bin/evmchainbench run --faucet-private-key A1CB4F09E2CF10C23C01DB3588E3CAA98E4CB7CE5B638409750CF493DC14AFAC --tx-count 10000 --mempool 500 -p uniswap
+        ./bin/evmchainbench run --faucet-private-key A1CB4F09E2CF10C23C01DB3588E3CAA98E4CB7CE5B638409750CF493DC14AFAC --tx-count 10000 --mempool 300 -p uniswap
