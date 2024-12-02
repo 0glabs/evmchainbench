@@ -180,7 +180,9 @@ func (el *EthereumListener) handleBlockResponse(response map[string]interface{})
 		}
 	} else {
 		if result, ok := response["result"].([]interface{}); ok {
-			fmt.Println("Logs:", len(result))
+			if len(result) > 0 {
+				fmt.Println("Logs:", len(result))
+			}
 		}
 	}
 }
