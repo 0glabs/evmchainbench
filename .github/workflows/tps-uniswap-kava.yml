@@ -25,7 +25,7 @@ jobs:
         make build
     - name: Build Chain
       run: |
-        git clone -b release/v0.26.x https://github.com/Kava-Labs/kava.git
+        git clone -b v0.27.0 https://github.com/Kava-Labs/kava.git
         cd kava
         make build
         sed -i 's|BINARY=kava|BINARY=./out/linux/kava|' ./contrib/devnet/init-new-chain.sh
