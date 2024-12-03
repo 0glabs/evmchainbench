@@ -11,7 +11,8 @@ on:
 
 jobs:
   run:
-    runs-on: large-chain-runner
+    runs-on: 
+      labels: large-chain-runner
     steps:
     - uses: actions/checkout@v4
     - name: Set up Go
