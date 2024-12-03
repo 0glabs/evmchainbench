@@ -33,8 +33,7 @@ jobs:
         jq '.consensus_params.block.max_gas |= "100000000"' ~/.kava/config/genesis.json > /tmp/tmp.json; mv /tmp/tmp.json ~/.kava/config/genesis.json
         jq '.consensus_params.block.max_bytes |= "50000000"' ~/.kava/config/genesis.json > /tmp/tmp.json; mv /tmp/tmp.json ~/.kava/config/genesis.json
         sed -i 's/tracer = "json"/tracer = ""/' ~/.kava/config/app.toml
-        cat ~/.kava/config/app.toml | grep tracer
         ./out/linux/kava start > chain.log 2>&1 &
         while ! nc -z localhost 8546; do sleep 1; done
         cd ../../evmchainbench
-        ./bin/evmchainbench run --faucet-private-key A1CB4F09E2CF10C23C01DB3588E3CAA98E4CB7CE5B638409750CF493DC14AFAC --tx-count 1000 --mempool 300 -p uniswap
+        ./bin/evmchainbench run --faucet-private-key A1CB4F09E2CF10C23C01DB3588E3CAA98E4CB7CE5B638409750CF493DC14AFAC --sender-count 2 --tx-count 20000 --mempool 2500 -p uniswap
