@@ -18,6 +18,7 @@ jobs:
       uses: actions/setup-go@v5
       with:
         go-version: '1.23'
+        cache: 'false'
     - name: Install moreutils (for sponge)
       run: sudo apt-get update && sudo apt-get install -y moreutils
     - name: Build Tool
@@ -30,7 +31,7 @@ jobs:
         make build
         sed -i 's|BINARY=kava|BINARY=./out/linux/kava|' ./contrib/devnet/init-new-chain.sh
         ./contrib/devnet/init-new-chain.sh
-        jq '.consensus_params.block.max_gas |= "100000000"' ~/.kava/config/genesis.json > /tmp/tmp.json; mv /tmp/tmp.json ~/.kava/config/genesis.json
+        jq '.consensus_params.block.max_gas |= "20000000"' ~/.kava/config/genesis.json > /tmp/tmp.json; mv /tmp/tmp.json ~/.kava/config/genesis.json
         jq '.consensus_params.block.max_bytes |= "50000000"' ~/.kava/config/genesis.json > /tmp/tmp.json; mv /tmp/tmp.json ~/.kava/config/genesis.json
         sed -i 's/tracer = "json"/tracer = ""/' ~/.kava/config/app.toml
         ./out/linux/kava start > chain.log 2>&1 &
