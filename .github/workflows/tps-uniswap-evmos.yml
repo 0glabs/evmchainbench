@@ -31,4 +31,4 @@ jobs:
         ./local_node.sh > chain.log 2>&1 &
         while ! nc -z localhost 8546; do sleep 1; done
         cd ../../evmchainbench
-        ./bin/evmchainbench run --faucet-private-key 8A36C69D940A92FCEA94B36D0F2928C7A0EE19A90073EDA769693298DFA9603B --tx-count 20000 --mempool 1000 -p uniswap
+        ./bin/evmchainbench run --faucet-private-key 8A36C69D940A92FCEA94B36D0F2928C7A0EE19A90073EDA769693298DFA9603B --tx-count 10000 --mempool 500 -p uniswap
