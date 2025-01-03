@@ -41,8 +41,6 @@ Evmos achieves higher ERC20 and Uniswap TPS primarily due to its **larger block 
   - **Network Congestion**: Larger blocks may cause higher peak loads, leading to temporary congestion under high transaction volume.  
   - **Gas Fees**: Larger blocks can reduce gas fees during normal conditions but may increase volatility during congestion.  
 
-In **v2**, we are carefully balancing these tradeoffs by mimicking Bera’s execution client approach while **reducing block finality time** to achieve both high TPS and low-latency finality.
-
 ### 4. Performance Gap Between 0G and Kava  
 Despite similar block size configurations, **0G outperforms Kava** due to its enhanced `estimateGas` method. This improvement allows for more precise gas limit calculations, reducing unnecessary overhead and boosting overall transaction throughput.
 
