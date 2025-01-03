@@ -14,7 +14,13 @@
    The numbers shown in the chart represent **transactions per second (TPS)** achieved during our benchmarking. These results are based on specific configurations we tested and optimized to ensure fairness. While we aimed to make the comparison competitive by adjusting configurations for each chain, we acknowledge that some configurations may not be fully optimal, as optimizing every chain requires significant time investment. 
 
 2. **Benchmarking Methodology**  
-   This repository enables **anyone** to benchmark these chains using the same testing suite we used, ensuring **truthful and reproducible results**. To illustrate this, we recorded a demo showcasing how we achieved these performance numbers. This demo is particularly helpful for non-technical users or those who prefer a quick overview instead of running the tests themselves.
+   This repository enables **anyone** to benchmark these chains using the same testing suite we used, ensuring **truthful and reproducible results**. For added convenience:
+
+- We used **GitHub Actions** to automate the benchmarking process.  
+- **Anyone can fork the repository** and click **Run** in the **GitHub Actions** tab to execute the tests and view the results.  
+- Alternatively, you can directly view **historical results** in our GitHub Actions records, which include the complete testing steps and detailed logs.
+
+This approach ensures transparency and provides a compelling demonstration for both technical and non-technical users.
 
 ---
 
